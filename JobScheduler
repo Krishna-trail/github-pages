@@ -1,0 +1,86 @@
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+@Service
+public class ApiService {
+
+    @Value("${api.url}")
+    private String apiUrl;
+
+    @Value("${api.json-file-path}")
+    private String jsonFilePath;
+
+    public ResponseEntity<String> callApi() throws Exception {
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Read JSON from file
+        String jsonBody = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+
+        // Set headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Custom-Header", "HeaderValue");
+
+        // Create request
+        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+
+        // Make POST request
+        return restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
+    }
+}
+
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.http.ResponseEntity;
+
+@Component
+public class Scheduler {
+
+    @Autowired
+    private ApiService apiService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Scheduled(fixedRate = 1800000) // 30 minutes in milliseconds
+    public void scheduleTask() {
+        try {
+            ResponseEntity<String> response = apiService.callApi();
+            if (response.getStatusCodeValue() != 200) {
+                emailService.sendErrorEmail("API response was not 200. Received: " + response.getStatusCodeValue());
+            }
+        } catch (Exception e) {
+            emailService.sendErrorEmail("API request failed: " + e.getMessage());
+        }
+    }
+}
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailService {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public void sendErrorEmail(String message) {
+        SimpleMailMessage email = new SimpleMailMessage();
+        email.setTo("tmsengineering@gmail.com");
+        email.setSubject("API Error Notification");
+        email.setText(message);
+        mailSender.send(email);
+    }
+}
