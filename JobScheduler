@@ -1,86 +1,34 @@
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import org.json.JSONObject;
 
 @Service
-public class ApiService {
+public class TokenService {
 
-    @Value("${api.url}")
-    private String apiUrl;
-
-    @Value("${api.json-file-path}")
-    private String jsonFilePath;
-
-    public ResponseEntity<String> callApi() throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
-
-        // Read JSON from file
-        String jsonBody = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
-
-        // Set headers
+    public String getToken() {
+        String tokenUrl = "https://citfederate2.secure.barclays.intranet:8443/as/token.oauth2";
+        
+        // Request Headers
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Custom-Header", "HeaderValue");
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        // Create request
-        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+        // Request Body
+        String requestBody = "grant_type=password&client_id=IBDNCLIENT&username=sysTIAAASTestHT&password=your_password";
 
-        // Make POST request
-        return restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
-    }
-}
+        // Create HTTP Entity
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
+        // RestTemplate to call the API
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, requestEntity, String.class);
 
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.springframework.http.ResponseEntity;
-
-@Component
-public class Scheduler {
-
-    @Autowired
-    private ApiService apiService;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Scheduled(fixedRate = 1800000) // 30 minutes in milliseconds
-    public void scheduleTask() {
-        try {
-            ResponseEntity<String> response = apiService.callApi();
-            if (response.getStatusCodeValue() != 200) {
-                emailService.sendErrorEmail("API response was not 200. Received: " + response.getStatusCodeValue());
-            }
-        } catch (Exception e) {
-            emailService.sendErrorEmail("API request failed: " + e.getMessage());
+        if (response.getStatusCode() == HttpStatus.OK) {
+            // Parse the response to extract the token
+            JSONObject jsonResponse = new JSONObject(response.getBody());
+            return jsonResponse.getString("access_token");
+        } else {
+            throw new RuntimeException("Failed to get token: " + response.getStatusCode());
         }
-    }
-}
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Service;
-
-@Service
-public class EmailService {
-
-    @Autowired
-    private JavaMailSender mailSender;
-
-    public void sendErrorEmail(String message) {
-        SimpleMailMessage email = new SimpleMailMessage();
-        email.setTo("tmsengineering@gmail.com");
-        email.setSubject("API Error Notification");
-        email.setText(message);
-        mailSender.send(email);
     }
 }
