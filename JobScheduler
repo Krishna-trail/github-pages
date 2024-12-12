@@ -7,28 +7,6 @@ import org.json.JSONObject;
 public class TokenService {
 
     public String getToken() {
-        String tokenUrl = "https://citfederate2.secure.barclays.intranet:8443/as/token.oauth2";
         
-        // Request Headers
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        // Request Body
-        String requestBody = "grant_type=password&client_id=IBDNCLIENT&username=sysTIAAASTestHT&password=your_password";
-
-        // Create HTTP Entity
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-
-        // RestTemplate to call the API
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, requestEntity, String.class);
-
-        if (response.getStatusCode() == HttpStatus.OK) {
-            // Parse the response to extract the token
-            JSONObject jsonResponse = new JSONObject(response.getBody());
-            return jsonResponse.getString("access_token");
-        } else {
-            throw new RuntimeException("Failed to get token: " + response.getStatusCode());
-        }
     }
 }
