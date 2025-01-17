@@ -1,12 +1,73 @@
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.json.JSONObject;
+@WebServlet("/downloadSortedExcel")
+public class DownloadSortedExcelServlet extends HttpServlet {
 
-@Service
-public class TokenService {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Path to the uploaded Excel file
+        String filePath = "/path/to/uploaded/file.xlsx";
 
-    public String getToken() {
-        
+        try (FileInputStream fis = new FileInputStream(filePath);
+             Workbook workbook = WorkbookFactory.create(fis)) {
+
+            // Read the first sheet
+            Sheet sheet = workbook.getSheetAt(0);
+            List<Row> rows = new ArrayList<>();
+
+            // Skip header row
+            Iterator<Row> iterator = sheet.iterator();
+            if (iterator.hasNext()) {
+                rows.add(iterator.next()); // Add header
+            }
+
+            // Collect rows for sorting
+            while (iterator.hasNext()) {
+                rows.add(iterator.next());
+            }
+
+            // Sort rows by 'Usage' column (Assume column index 1 for `Usage`)
+            rows.subList(1, rows.size()).sort((row1, row2) -> {
+                double usage1 = row1.getCell(1).getNumericCellValue();
+                double usage2 = row2.getCell(1).getNumericCellValue();
+                return Double.compare(usage2, usage1);
+            });
+
+            // Create a new workbook to write sorted data
+            Workbook sortedWorkbook = new XSSFWorkbook();
+            Sheet sortedSheet = sortedWorkbook.createSheet("Sorted Data");
+
+            // Write sorted rows to new sheet
+            for (int i = 0; i < rows.size(); i++) {
+                Row newRow = sortedSheet.createRow(i);
+                Row originalRow = rows.get(i);
+
+                for (int j = 0; j < originalRow.getLastCellNum(); j++) {
+                    Cell originalCell = originalRow.getCell(j);
+                    Cell newCell = newRow.createCell(j);
+
+                    if (originalCell != null) {
+                        switch (originalCell.getCellType()) {
+                            case STRING:
+                                newCell.setCellValue(originalCell.getStringCellValue());
+                                break;
+                            case NUMERIC:
+                                newCell.setCellValue(originalCell.getNumericCellValue());
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+
+            // Prepare the response for file download
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=SortedUsage.xlsx");
+
+            try (ServletOutputStream out = response.getOutputStream()) {
+                sortedWorkbook.write(out);
+                sortedWorkbook.close();
+            }
+        } catch (Exception e) {
+            throw new ServletException("Error processing Excel file", e);
+        }
     }
 }
