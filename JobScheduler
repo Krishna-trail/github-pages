@@ -1,73 +1,76 @@
-@WebServlet("/downloadSortedExcel")
-public class DownloadSortedExcelServlet extends HttpServlet {
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Path to the uploaded Excel file
-        String filePath = "/path/to/uploaded/file.xlsx";
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = WorkbookFactory.create(fis)) {
+public class SortExcelByUsage {
+    public static void main(String[] args) {
+        String inputFilePath = "path_to_input_file.xlsx"; // Path to your input Excel file
+        String outputFilePath = "path_to_output_file.xlsx"; // Path to save the sorted file
 
-            // Read the first sheet
-            Sheet sheet = workbook.getSheetAt(0);
+        try (FileInputStream fis = new FileInputStream(inputFilePath);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+
+            // Get the first sheet
+            Sheet sheet = workbook.getSheetAt(0); 
+            int snoColumnIndex = 0;   // Index for S.No. column (0-based)
+            int usageColumnIndex = 1; // Index for "Usage" column (0-based)
+
+            // Read all rows into a list, skipping the header row
             List<Row> rows = new ArrayList<>();
-
-            // Skip header row
-            Iterator<Row> iterator = sheet.iterator();
-            if (iterator.hasNext()) {
-                rows.add(iterator.next()); // Add header
+            Row headerRow = sheet.getRow(0); // Store the header row
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                rows.add(sheet.getRow(i));
             }
 
-            // Collect rows for sorting
-            while (iterator.hasNext()) {
-                rows.add(iterator.next());
-            }
-
-            // Sort rows by 'Usage' column (Assume column index 1 for `Usage`)
-            rows.subList(1, rows.size()).sort((row1, row2) -> {
-                double usage1 = row1.getCell(1).getNumericCellValue();
-                double usage2 = row2.getCell(1).getNumericCellValue();
-                return Double.compare(usage2, usage1);
+            // Sort rows based on the "Usage" column in descending order, ignoring S.No.
+            rows.sort((row1, row2) -> {
+                double usage1 = row1.getCell(usageColumnIndex).getNumericCellValue();
+                double usage2 = row2.getCell(usageColumnIndex).getNumericCellValue();
+                return Double.compare(usage2, usage1); // Descending order
             });
 
-            // Create a new workbook to write sorted data
-            Workbook sortedWorkbook = new XSSFWorkbook();
-            Sheet sortedSheet = sortedWorkbook.createSheet("Sorted Data");
+            // Clear only the data rows (excluding the header row) in the sheet
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                sheet.removeRow(sheet.getRow(i));
+            }
 
-            // Write sorted rows to new sheet
-            for (int i = 0; i < rows.size(); i++) {
-                Row newRow = sortedSheet.createRow(i);
-                Row originalRow = rows.get(i);
+            // Re-add the sorted rows to the sheet
+            int rowIndex = 1; // Start from the first row after the header
+            for (Row row : rows) {
+                Row newRow = sheet.createRow(rowIndex++);
 
-                for (int j = 0; j < originalRow.getLastCellNum(); j++) {
-                    Cell originalCell = originalRow.getCell(j);
-                    Cell newCell = newRow.createCell(j);
-
-                    if (originalCell != null) {
-                        switch (originalCell.getCellType()) {
-                            case STRING:
-                                newCell.setCellValue(originalCell.getStringCellValue());
-                                break;
-                            case NUMERIC:
-                                newCell.setCellValue(originalCell.getNumericCellValue());
-                                break;
-                            default:
-                                break;
-                        }
+                for (int colIndex = 0; colIndex < row.getLastCellNum(); colIndex++) {
+                    Cell oldCell = row.getCell(colIndex);
+                    if (oldCell != null) {
+                        Cell newCell = newRow.createCell(colIndex);
+                        copyCellValue(oldCell, newCell);
                     }
                 }
             }
 
-            // Prepare the response for file download
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=SortedUsage.xlsx");
-
-            try (ServletOutputStream out = response.getOutputStream()) {
-                sortedWorkbook.write(out);
-                sortedWorkbook.close();
+            // Write the sorted data to a new file
+            try (FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+                workbook.write(fos);
             }
-        } catch (Exception e) {
-            throw new ServletException("Error processing Excel file", e);
+
+            System.out.println("Excel sheet sorted by 'Usage' column in descending order, S.No. column left unchanged.");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Utility method to copy cell values
+    private static void copyCellValue(Cell oldCell, Cell newCell) {
+        switch (oldCell.getCellType()) {
+            case STRING -> newCell.setCellValue(oldCell.getStringCellValue());
+            case NUMERIC -> newCell.setCellValue(oldCell.getNumericCellValue());
+            case BOOLEAN -> newCell.setCellValue(oldCell.getBooleanCellValue());
+            case FORMULA -> newCell.setCellFormula(oldCell.getCellFormula());
+            default -> newCell.setCellValue(oldCell.toString());
         }
     }
 }
