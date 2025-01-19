@@ -1,29 +1,26 @@
-// Sort rows by the "Usage" column (excluding SNO column)
-rows.subList(1, rows.size()).sort((row1, row2) -> {
-    int usage1 = Integer.parseInt(row1.getCell(4).getStringCellValue()); // Usage column
-    int usage2 = Integer.parseInt(row2.getCell(4).getStringCellValue());
-    return Integer.compare(usage2, usage1); // Descending order
-});
+// Utility to copy a CellStyle
+private static CellStyle copyCellStyle(CellStyle originalStyle, Workbook targetWorkbook) {
+    CellStyle newStyle = targetWorkbook.createCellStyle();
+    newStyle.cloneStyleFrom(originalStyle);
+    return newStyle;
+}
 
-// Create a new workbook to write sorted data
-Workbook sortedWorkbook = new XSSFWorkbook();
-Sheet sortedSheet = sortedWorkbook.createSheet("Sorted Data");
-
-// Copy the "SNO" column (index 0) from the original workbook
+// Modified part of the code
 for (int i = 0; i < rows.size(); i++) {
     Row newRow = sortedSheet.createRow(i);
     Row originalRow = rows.get(i);
 
-    // Copy "SNO" column from the original workbook
+    // Copy "SNO" column
     Cell originalSnoCell = originalRow.getCell(0); // SNO column
     Cell newSnoCell = newRow.createCell(0); // SNO column in new workbook
 
     if (originalSnoCell != null) {
         newSnoCell.setCellValue(originalSnoCell.getNumericCellValue()); // Copy value
-        newSnoCell.setCellStyle(originalSnoCell.getCellStyle()); // Copy style
+        CellStyle snoStyle = copyCellStyle(originalSnoCell.getCellStyle(), sortedWorkbook);
+        newSnoCell.setCellStyle(snoStyle); // Copy style
     }
 
-    // Copy other columns (sorted data)
+    // Copy other columns
     for (int j = 1; j < originalRow.getLastCellNum(); j++) { // Start from index 1
         Cell originalCell = originalRow.getCell(j);
         Cell newCell = newRow.createCell(j);
@@ -46,12 +43,8 @@ for (int i = 0; i < rows.size(); i++) {
                     break;
             }
             // Copy style
-            newCell.setCellStyle(originalCell.getCellStyle());
+            CellStyle newStyle = copyCellStyle(originalCell.getCellStyle(), sortedWorkbook);
+            newCell.setCellStyle(newStyle);
         }
     }
-}
-
-// Save the sorted workbook to a file
-try (FileOutputStream outputStream = new FileOutputStream("SortedData.xlsx")) {
-    sortedWorkbook.write(outputStream);
 }
