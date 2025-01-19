@@ -1,58 +1,60 @@
-// Sort rows by the "Usage" column (keeping "SNO" static)
-rows.subList(1, rows.size()).sort((row1, row2) -> {
-    int usage1 = Integer.parseInt(row1.getCell(4).getStringCellValue()); // Usage column
-    int usage2 = Integer.parseInt(row2.getCell(4).getStringCellValue());
-    return Integer.compare(usage2, usage1); // Descending order
-});
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-// Create a new workbook to write sorted data
-Workbook sortedWorkbook = new XSSFWorkbook();
-Sheet sortedSheet = sortedWorkbook.createSheet("Sorted Data");
+import java.io.FileOutputStream;
+import java.io.IOException;
 
-// Write sorted rows to the new sheet
-for (int i = 0; i < rows.size(); i++) {
-    Row newRow = sortedSheet.createRow(i);
-    Row originalRow = rows.get(i);
+public class ExcelStylingExample {
 
-    for (int j = 0; j < originalRow.getLastCellNum(); j++) {
-        Cell originalCell = originalRow.getCell(j);
-        Cell newCell = newRow.createCell(j);
+    public static void main(String[] args) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Styled Sheet");
 
-        if (originalCell != null) {
-            switch (originalCell.getCellType()) {
-                case STRING:
-                    newCell.setCellValue(originalCell.getStringCellValue());
-                    break;
-                case NUMERIC:
-                    newCell.setCellValue(originalCell.getNumericCellValue());
-                    break;
-                case BOOLEAN:
-                    newCell.setCellValue(originalCell.getBooleanCellValue());
-                    break;
-                case FORMULA:
-                    newCell.setCellFormula(originalCell.getCellFormula());
-                    break;
-                default:
-                    break;
+        // Create a font for the header row (Bold)
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        
+        // Create a CellStyle for the header row (Centered and Bold)
+        CellStyle headerCellStyle = workbook.createCellStyle();
+        headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headerCellStyle.setFont(headerFont);
+        
+        // Create a CellStyle for the normal rows (Left Indent)
+        CellStyle normalCellStyle = workbook.createCellStyle();
+        normalCellStyle.setAlignment(HorizontalAlignment.LEFT);
+        normalCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"Column 1", "Column 2", "Column 3"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerCellStyle); // Apply header style
+        }
+
+        // Create some data rows
+        for (int i = 1; i <= 5; i++) {
+            Row row = sheet.createRow(i);
+            for (int j = 0; j < headers.length; j++) {
+                Cell cell = row.createCell(j);
+                cell.setCellValue("Data " + (i * (j + 1)));
+                cell.setCellStyle(normalCellStyle); // Apply normal row style
             }
-            // Copy cell styles
-            newCell.setCellStyle(originalCell.getCellStyle());
         }
-    }
-}
 
-// Reassign "SNO" column values to preserve their original sequence
-for (int i = 1; i < sortedSheet.getLastRowNum() + 1; i++) {
-    Row row = sortedSheet.getRow(i);
-    if (row != null) {
-        Cell snoCell = row.getCell(0); // SNO column index
-        if (snoCell != null) {
-            snoCell.setCellValue(i); // Update SNO based on the row index
+        // Auto-size columns
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
         }
-    }
-}
 
-// Save the sorted workbook to a file
-try (FileOutputStream outputStream = new FileOutputStream("SortedData.xlsx")) {
-    sortedWorkbook.write(outputStream);
+        // Write to file
+        try (FileOutputStream fileOut = new FileOutputStream("StyledExcel.xlsx")) {
+            workbook.write(fileOut);
+        }
+
+        // Close workbook
+        workbook.close();
+    }
 }
