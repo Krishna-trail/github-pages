@@ -1,60 +1,47 @@
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
-public class ExcelStylingExample {
+@WebServlet("/DownloadExcelServlet")
+public class DownloadExcelServlet extends HttpServlet {
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Sample data (replace with dynamic retrieval if needed)
+        String[][] tableData = {
+                {"S.NO", "Active Directory", "Manager Name", "Created Date"},
+                {"1", "AD123", "John Doe", "2023-01-01"},
+                {"2", "AD124", "Jane Smith", "2023-01-02"}
+        };
 
-    public static void main(String[] args) throws IOException {
+        // Create a workbook
         Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Styled Sheet");
+        Sheet sheet = workbook.createSheet("Table Data");
 
-        // Create a font for the header row (Bold)
-        Font headerFont = workbook.createFont();
-        headerFont.setBold(true);
-        
-        // Create a CellStyle for the header row (Centered and Bold)
-        CellStyle headerCellStyle = workbook.createCellStyle();
-        headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
-        headerCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-        headerCellStyle.setFont(headerFont);
-        
-        // Create a CellStyle for the normal rows (Left Indent)
-        CellStyle normalCellStyle = workbook.createCellStyle();
-        normalCellStyle.setAlignment(HorizontalAlignment.LEFT);
-        normalCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-
-        // Create header row
-        Row headerRow = sheet.createRow(0);
-        String[] headers = {"Column 1", "Column 2", "Column 3"};
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-            cell.setCellStyle(headerCellStyle); // Apply header style
-        }
-
-        // Create some data rows
-        for (int i = 1; i <= 5; i++) {
+        // Populate Excel sheet with table data
+        for (int i = 0; i < tableData.length; i++) {
             Row row = sheet.createRow(i);
-            for (int j = 0; j < headers.length; j++) {
+            for (int j = 0; j < tableData[i].length; j++) {
                 Cell cell = row.createCell(j);
-                cell.setCellValue("Data " + (i * (j + 1)));
-                cell.setCellStyle(normalCellStyle); // Apply normal row style
+                cell.setCellValue(tableData[i][j]);
             }
         }
 
-        // Auto-size columns
-        for (int i = 0; i < headers.length; i++) {
-            sheet.autoSizeColumn(i);
+        // Set response content type and headers
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=table_data.xlsx");
+
+        // Write workbook to output stream
+        try (OutputStream outputStream = response.getOutputStream()) {
+            workbook.write(outputStream);
         }
 
-        // Write to file
-        try (FileOutputStream fileOut = new FileOutputStream("StyledExcel.xlsx")) {
-            workbook.write(fileOut);
-        }
-
-        // Close workbook
         workbook.close();
     }
 }
