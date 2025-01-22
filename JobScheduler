@@ -3,41 +3,58 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 
 @WebServlet("/DownloadExcelServlet")
 public class DownloadExcelServlet extends HttpServlet {
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Sample data (replace with dynamic retrieval if needed)
-        String[][] tableData = {
-                {"S.NO", "Active Directory", "Manager Name", "Created Date"},
-                {"1", "AD123", "John Doe", "2023-01-01"},
-                {"2", "AD124", "Jane Smith", "2023-01-02"}
-        };
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Retrieve data from session
+        HttpSession session = request.getSession();
+        Map<String, String[]> dataValues = (Map<String, String[]>) session.getAttribute("dataValues");
 
-        // Create a workbook
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Table Data");
-
-        // Populate Excel sheet with table data
-        for (int i = 0; i < tableData.length; i++) {
-            Row row = sheet.createRow(i);
-            for (int j = 0; j < tableData[i].length; j++) {
-                Cell cell = row.createCell(j);
-                cell.setCellValue(tableData[i][j]);
-            }
+        if (dataValues == null || dataValues.isEmpty()) {
+            response.getWriter().write("No data available to download.");
+            return;
         }
 
-        // Set response content type and headers
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=table_data.xlsx");
+        // Create Excel workbook and sheet
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Data");
 
-        // Write workbook to output stream
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"S.NO", "Active Directory", "Manager Name", "Created Date"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // Populate data rows
+        int rowIndex = 1;
+        int sno = 1; // Serial number
+        for (Map.Entry<String, String[]> entry : dataValues.entrySet()) {
+            Row row = sheet.createRow(rowIndex++);
+            String sys = entry.getKey();
+            String[] values = entry.getValue();
+
+            row.createCell(0).setCellValue(sno++); // S.NO
+            row.createCell(1).setCellValue(sys);   // Active Directory
+            row.createCell(2).setCellValue(values[0]); // Manager Name
+            row.createCell(3).setCellValue(values[1]); // Created Date
+        }
+
+        // Set response headers
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=data.xlsx");
+
+        // Write workbook to response output stream
         try (OutputStream outputStream = response.getOutputStream()) {
             workbook.write(outputStream);
         }
