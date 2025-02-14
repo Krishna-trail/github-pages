@@ -1,16 +1,28 @@
-<label for="mobile">Mobile Number:</label>
-<input type="text" id="mobile" name="mobile" maxlength="10" pattern="\d{10}" required 
-       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" 
-       placeholder="Enter 10-digit mobile number">
-<span id="error-message" style="color: red;"></span>
+<form id="myForm">
+    <label><input type="radio" name="option" value="Option 1"> Option 1</label>
+    <label><input type="radio" name="option" value="Option 2"> Option 2</label>
+    <label><input type="radio" name="option" value="Option 3"> Option 3</label>
+    <label><input type="radio" name="option" value="Option 4"> Option 4</label>
+    
+    <br><br>
+    <input type="submit" value="Submit">
+</form>
+
+<p id="responseMessage" style="color: green;"></p>
 
 <script>
-document.getElementById('mobile').addEventListener('input', function() {
-    var input = this.value;
-    if (input.length !== 10) {
-        document.getElementById('error-message').textContent = "Mobile number must be 10 digits";
-    } else {
-        document.getElementById('error-message').textContent = "";
+document.getElementById('myForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent form submission
+    let selectedOption = document.querySelector('input[name="option"]:checked');
+    if (selectedOption) {
+        document.getElementById('responseMessage').textContent = "You selected: " + selectedOption.value;
     }
+});
+
+// Clear previous response when selecting a new radio button
+document.querySelectorAll('input[name="option"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        document.getElementById('responseMessage').textContent = ""; // Clear previous response
+    });
 });
 </script>
