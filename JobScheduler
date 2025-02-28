@@ -1,28 +1,43 @@
-<form id="myForm">
-    <label><input type="radio" name="option" value="Option 1"> Option 1</label>
-    <label><input type="radio" name="option" value="Option 2"> Option 2</label>
-    <label><input type="radio" name="option" value="Option 3"> Option 3</label>
-    <label><input type="radio" name="option" value="Option 4"> Option 4</label>
-    
-    <br><br>
-    <input type="submit" value="Submit">
-</form>
+package com.example.config;
 
-<p id="responseMessage" style="color: green;"></p>
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-<script>
-document.getElementById('myForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent form submission
-    let selectedOption = document.querySelector('input[name="option"]:checked');
-    if (selectedOption) {
-        document.getElementById('responseMessage').textContent = "You selected: " + selectedOption.value;
+@Configuration
+public class CorsConfig {
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**") // Allow all endpoints
+                        .allowedOrigins("http://localhost:4200") // Replace with your frontend URL
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
+            }
+        };
     }
-});
+}
 
-// Clear previous response when selecting a new radio button
-document.querySelectorAll('input[name="option"]').forEach(function(radio) {
-    radio.addEventListener('change', function() {
-        document.getElementById('responseMessage').textContent = ""; // Clear previous response
-    });
-});
-</script>
+
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api")
+@CrossOrigin(origins = "http://localhost:4200") // Allow requests from frontend
+public class MyController {
+    
+    @GetMapping("/data")
+    public String getData() {
+        return "Hello from Spring Boot!";
+    }
+}
+
+
+spring.web.cors.allowed-origins=http://localhost:4200
+spring.web.cors.allowed-methods=GET,POST,PUT,DELETE,OPTIONS
+spring.web.cors.allowed-headers=*
+spring.web.cors.allow-credentials=true
