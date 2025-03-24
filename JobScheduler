@@ -1,16 +1,18 @@
 @WebServlet("/download")
 public class DownloadServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Set response type for Excel download
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=ProcessedData.xlsx");
 
         try (Workbook workbook = new XSSFWorkbook(); OutputStream out = response.getOutputStream()) {
             Sheet sheet = workbook.createSheet("Processed Data");
 
-            // Example data (you should retrieve actual data)
+            // Retrieve stored data
             List<List<String>> excelData = (List<List<String>>) getServletContext().getAttribute("excelData");
-            if (excelData == null) excelData = new ArrayList<>(); 
+            if (excelData == null) excelData = new ArrayList<>();
 
+            // Write data to Excel
             int rowNum = 0;
             for (List<String> rowData : excelData) {
                 Row row = sheet.createRow(rowNum++);
@@ -20,7 +22,9 @@ public class DownloadServlet extends HttpServlet {
                 }
             }
 
+            // Write workbook to response output stream
             workbook.write(out);
+            workbook.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
