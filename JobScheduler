@@ -1,32 +1,39 @@
-@WebServlet("/download")
-public class DownloadServlet extends HttpServlet {
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Set response type for Excel download
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ProcessedData.xlsx");
+@ExtendWith(MockitoExtension.class)
+public class AuthServiceTest {
 
-        try (Workbook workbook = new XSSFWorkbook(); OutputStream out = response.getOutputStream()) {
-            Sheet sheet = workbook.createSheet("Processed Data");
+    @InjectMocks
+    private AuthService authService; // class containing getToken()
 
-            // Retrieve stored data
-            List<List<String>> excelData = (List<List<String>>) getServletContext().getAttribute("excelData");
-            if (excelData == null) excelData = new ArrayList<>();
+    @Mock
+    private RestTemplate restTemplate;
 
-            // Write data to Excel
-            int rowNum = 0;
-            for (List<String> rowData : excelData) {
-                Row row = sheet.createRow(rowNum++);
-                int colNum = 0;
-                for (String cellData : rowData) {
-                    row.createCell(colNum++).setCellValue(cellData);
-                }
-            }
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(authService, "tokenUrl", "https://dummy-token-url");
+        ReflectionTestUtils.setField(authService, "username", "testuser");
+        ReflectionTestUtils.setField(authService, "password", "testpass");
+    }
 
-            // Write workbook to response output stream
-            workbook.write(out);
-            workbook.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Test
+    void testGetTokenSuccess() {
+        String expectedToken = "dummy-token";
+
+        // Mocking response
+        ResponseEntity<String> responseEntity = new ResponseEntity<>(expectedToken, HttpStatus.OK);
+
+        // Capture the actual HttpEntity
+        ArgumentCaptor<HttpEntity> captor = ArgumentCaptor.forClass(HttpEntity.class);
+        when(restTemplate.postForEntity(eq("https://dummy-token-url"), captor.capture(), eq(String.class)))
+            .thenReturn(responseEntity);
+
+        String actualToken = authService.getToken();
+
+        assertEquals(expectedToken, actualToken);
+
+        // You can also assert request body or headers
+        HttpEntity<Map<String, String>> capturedEntity = captor.getValue();
+        assertNotNull(capturedEntity.getBody());
+        assertEquals("testuser", capturedEntity.getBody().get("username"));
+        assertEquals("testpass", capturedEntity.getBody().get("password"));
     }
 }
