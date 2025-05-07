@@ -1,47 +1,47 @@
-@ExtendWith(MockitoExtension.class)
-public class AuthServiceTest {
+try {
+    int statusCode = response.getStatusCodeValue();
+    String responseBody = response.getBody();
 
-    @InjectMocks
-    private AuthService authService;
+    logger.log(Level.INFO, "Received status code: ******* " + statusCode);
+    logger.log(Level.INFO, "Received response body: ======= " + responseBody);
 
-    @Mock
-    private RestTemplate restTemplate;
+    if (responseBody != null && responseBody.trim().startsWith("{")) {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(responseBody);
 
-    @Test
-    void testGetTokenSuccess() throws Exception {
-        // Mock request and response
-        String mockResponse = "{\"access_token\":\"abc123tokenvalue\"}";
+        if (!String.valueOf(statusCode).startsWith("2")) {
+            JsonNode errorsNode = root.path("errors");
+            if (errorsNode.isArray() && errorsNode.size() > 0) {
+                JsonNode error = errorsNode.get(0);
+                String title = error.path("title").asText("");
+                String detail = error.path("detail").asText("");
 
-        ResponseEntity<String> responseEntity =
-                new ResponseEntity<>(mockResponse, HttpStatus.OK);
+                System.out.println("Detail: " + detail);
 
-        // Mock the RestTemplate exchange call
-        Mockito.when(restTemplate.exchange(
-                Mockito.anyString(),
-                Mockito.eq(HttpMethod.POST),
-                Mockito.any(HttpEntity.class),
-                Mockito.eq(String.class)
-        )).thenReturn(responseEntity);
+                if (statusCode == 401 && !detail.isEmpty()) {
+                    if (detail.contains(Constants.UNAUTHORIZED)) {
+                        if (detail.contains(Constants.TIAA_INVALID_TOKEN)) {
+                            logger.log(Level.INFO, "Signature Expired. JWT is no longer valid.");
+                            // Handle token expiration logic here
+                        }
+                    }
+                }
+            }
+        } else {
+            // Handle success response here
+            String token = root.path("token").asText("");
+            String type = root.path("type").asText("");
+            String expires = root.path("expires").asText("");
 
-        // Call the method
-        String token = authService.getToken();
+            logger.log(Level.INFO, "Mock Token: " + token);
+            logger.log(Level.INFO, "Mock Type: " + type);
+            logger.log(Level.INFO, "Mock Expires: " + expires);
+        }
 
-        // Verify and assert
-        assertEquals("abc123tokenvalue", token);
+    } else {
+        throw new RuntimeException("Invalid JSON response: " + responseBody);
     }
 
-    @Test
-    void testGetTokenFailureStatus() {
-        ResponseEntity<String> responseEntity =
-                new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
-
-        Mockito.when(restTemplate.exchange(
-                Mockito.anyString(),
-                Mockito.eq(HttpMethod.POST),
-                Mockito.any(HttpEntity.class),
-                Mockito.eq(String.class)
-        )).thenReturn(responseEntity);
-
-        assertThrows(RuntimeException.class, () -> authService.getToken());
-    }
+} catch (Exception e) {
+    logger.log(Level.SEVERE, "Exception while processing response", e);
 }
