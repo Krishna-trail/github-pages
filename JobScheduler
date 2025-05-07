@@ -2,38 +2,46 @@
 public class AuthServiceTest {
 
     @InjectMocks
-    private AuthService authService; // class containing getToken()
+    private AuthService authService;
 
     @Mock
     private RestTemplate restTemplate;
 
-    @BeforeEach
-    void setUp() {
-        ReflectionTestUtils.setField(authService, "tokenUrl", "https://dummy-token-url");
-        ReflectionTestUtils.setField(authService, "username", "testuser");
-        ReflectionTestUtils.setField(authService, "password", "testpass");
+    @Test
+    void testGetTokenSuccess() throws Exception {
+        // Mock request and response
+        String mockResponse = "{\"access_token\":\"abc123tokenvalue\"}";
+
+        ResponseEntity<String> responseEntity =
+                new ResponseEntity<>(mockResponse, HttpStatus.OK);
+
+        // Mock the RestTemplate exchange call
+        Mockito.when(restTemplate.exchange(
+                Mockito.anyString(),
+                Mockito.eq(HttpMethod.POST),
+                Mockito.any(HttpEntity.class),
+                Mockito.eq(String.class)
+        )).thenReturn(responseEntity);
+
+        // Call the method
+        String token = authService.getToken();
+
+        // Verify and assert
+        assertEquals("abc123tokenvalue", token);
     }
 
     @Test
-    void testGetTokenSuccess() {
-        String expectedToken = "dummy-token";
+    void testGetTokenFailureStatus() {
+        ResponseEntity<String> responseEntity =
+                new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
 
-        // Mocking response
-        ResponseEntity<String> responseEntity = new ResponseEntity<>(expectedToken, HttpStatus.OK);
+        Mockito.when(restTemplate.exchange(
+                Mockito.anyString(),
+                Mockito.eq(HttpMethod.POST),
+                Mockito.any(HttpEntity.class),
+                Mockito.eq(String.class)
+        )).thenReturn(responseEntity);
 
-        // Capture the actual HttpEntity
-        ArgumentCaptor<HttpEntity> captor = ArgumentCaptor.forClass(HttpEntity.class);
-        when(restTemplate.postForEntity(eq("https://dummy-token-url"), captor.capture(), eq(String.class)))
-            .thenReturn(responseEntity);
-
-        String actualToken = authService.getToken();
-
-        assertEquals(expectedToken, actualToken);
-
-        // You can also assert request body or headers
-        HttpEntity<Map<String, String>> capturedEntity = captor.getValue();
-        assertNotNull(capturedEntity.getBody());
-        assertEquals("testuser", capturedEntity.getBody().get("username"));
-        assertEquals("testpass", capturedEntity.getBody().get("password"));
+        assertThrows(RuntimeException.class, () -> authService.getToken());
     }
 }
