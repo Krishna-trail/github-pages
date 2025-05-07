@@ -1,47 +1,30 @@
-try {
-    int statusCode = response.getStatusCodeValue();
-    String responseBody = response.getBody();
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-    logger.log(Level.INFO, "Received status code: ******* " + statusCode);
-    logger.log(Level.INFO, "Received response body: ======= " + responseBody);
+public class ErrorResponseParser {
+    public static void main(String[] args) {
+        String responseBody = "400:{\"errors\":[{\"id\":\"6e09273b\", \"code\": \"BAD REQUEST\", \"title\": \"Unable to process the request\", \"detail\":\"Salesforce User Id is not allowed for requested TIAA-AS account: sysTIA\"}]}";
 
-    if (responseBody != null && responseBody.trim().startsWith("{")) {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(responseBody);
+        // Split on the first colon to separate status and JSON
+        String[] parts = responseBody.split(":", 2);
+        if (parts.length == 2) {
+            String jsonString = parts[1].trim();
 
-        if (!String.valueOf(statusCode).startsWith("2")) {
-            JsonNode errorsNode = root.path("errors");
-            if (errorsNode.isArray() && errorsNode.size() > 0) {
-                JsonNode error = errorsNode.get(0);
-                String title = error.path("title").asText("");
-                String detail = error.path("detail").asText("");
-
-                System.out.println("Detail: " + detail);
-
-                if (statusCode == 401 && !detail.isEmpty()) {
-                    if (detail.contains(Constants.UNAUTHORIZED)) {
-                        if (detail.contains(Constants.TIAA_INVALID_TOKEN)) {
-                            logger.log(Level.INFO, "Signature Expired. JWT is no longer valid.");
-                            // Handle token expiration logic here
-                        }
+            JSONObject json = new JSONObject(jsonString);
+            if (json.has("errors")) {
+                JSONArray errors = json.getJSONArray("errors");
+                for (int i = 0; i < errors.length(); i++) {
+                    JSONObject error = errors.getJSONObject(i);
+                    if (error.has("detail")) {
+                        String detail = error.getString("detail");
+                        System.out.println("Error Detail: " + detail);
                     }
                 }
+            } else {
+                System.out.println("No errors found.");
             }
         } else {
-            // Handle success response here
-            String token = root.path("token").asText("");
-            String type = root.path("type").asText("");
-            String expires = root.path("expires").asText("");
-
-            logger.log(Level.INFO, "Mock Token: " + token);
-            logger.log(Level.INFO, "Mock Type: " + type);
-            logger.log(Level.INFO, "Mock Expires: " + expires);
+            System.out.println("Invalid response format.");
         }
-
-    } else {
-        throw new RuntimeException("Invalid JSON response: " + responseBody);
     }
-
-} catch (Exception e) {
-    logger.log(Level.SEVERE, "Exception while processing response", e);
 }
