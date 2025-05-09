@@ -1,30 +1,47 @@
-import org.json.JSONArray;
-import org.json.JSONObject;
+@ExtendWith(MockitoExtension.class)
+public class AuthServiceTest {
 
-public class ErrorResponseParser {
-    public static void main(String[] args) {
-        String responseBody = "400:{\"errors\":[{\"id\":\"6e09273b\", \"code\": \"BAD REQUEST\", \"title\": \"Unable to process the request\", \"detail\":\"Salesforce User Id is not allowed for requested TIAA-AS account: sysTIA\"}]}";
+    @Mock
+    private RestTemplate restTemplate;
 
-        // Split on the first colon to separate status and JSON
-        String[] parts = responseBody.split(":", 2);
-        if (parts.length == 2) {
-            String jsonString = parts[1].trim();
+    private AuthService authService;
+    private final String tokenUrl = "http://example.com/token";
 
-            JSONObject json = new JSONObject(jsonString);
-            if (json.has("errors")) {
-                JSONArray errors = json.getJSONArray("errors");
-                for (int i = 0; i < errors.length(); i++) {
-                    JSONObject error = errors.getJSONObject(i);
-                    if (error.has("detail")) {
-                        String detail = error.getString("detail");
-                        System.out.println("Error Detail: " + detail);
-                    }
-                }
-            } else {
-                System.out.println("No errors found.");
-            }
-        } else {
-            System.out.println("Invalid response format.");
-        }
+    @BeforeEach
+    void setUp() {
+        authService = new AuthService(restTemplate, tokenUrl);
+    }
+
+    @Test
+    void testGetToken_success() {
+        // Arrange
+        String username = "testuser";
+        String password = "testpass";
+        String expectedToken = "mocked-token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("username", username);
+        body.put("password", password);
+
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(expectedToken, HttpStatus.OK);
+
+        when(restTemplate.exchange(
+                eq(tokenUrl),
+                eq(HttpMethod.POST),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(mockResponse);
+
+        // Act
+        String actualToken = authService.getToken(username, password);
+
+        // Assert
+        assertEquals(expectedToken, actualToken);
+        verify(restTemplate, times(1))
+            .exchange(eq(tokenUrl), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
     }
 }
