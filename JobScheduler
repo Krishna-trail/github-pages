@@ -19,7 +19,7 @@ public class JobSchedulerResponseHandler {
     }
 
     private void handleSuccessResponse(String body) {
-        JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+        JsonObject json = new JsonParser().parse(body).getAsJsonObject();
         JsonObject data = json.getAsJsonObject("data");
         if (data != null) {
             JsonObject attributes = data.getAsJsonObject("attributes");
@@ -33,7 +33,7 @@ public class JobSchedulerResponseHandler {
     }
 
     private void handleErrorResponse(String body) {
-        JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+        JsonObject json = new JsonParser().parse(body).getAsJsonObject();
         JsonArray errors = json.getAsJsonArray("errors");
 
         if (errors != null && errors.size() > 0) {
