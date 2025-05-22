@@ -1,46 +1,49 @@
 import com.google.gson.*;
+import org.springframework.http.ResponseEntity;
 
-public class ResponseHandler {
+public class JobSchedulerResponseHandler {
 
-    public static void main(String[] args) {
-        String response = "<400,{\"errors\":[{\"id\":\"d067afa19\",\"code\":\"BAD_REQUEST\",\"title\":\"Getting invalid response from Third Party Endpoint\",\"detail\":\"Bad Request:\"}]}>";
-        // String response = "<200,{\"data\":{\"type\":\"ZUORA\",\"attributes\":{\"accessToken\":\"78e1blfe43edb9\",\"accessTokenValidUpto\":\"2025-05-22T14:24:56.349Z\"}}}>";
+    private final Gson gson = new Gson();
 
-        processResponse(response);
+    public void handleResponse(ResponseEntity<String> responseEntity) {
+        int statusCode = responseEntity.getStatusCodeValue();
+        String body = responseEntity.getBody();
+
+        if (statusCode == 200) {
+            handleSuccessResponse(body);
+        } else if (statusCode >= 400) {
+            handleErrorResponse(body);
+        } else {
+            System.out.println("Unhandled status: " + statusCode);
+        }
     }
 
-    public static void processResponse(String response) {
-        try {
-            // Step 1: Remove angle brackets and split
-            String clean = response.replaceAll("[<>]", "");
-            String[] parts = clean.split(",", 2);  // Split only once at the first comma
-
-            int statusCode = Integer.parseInt(parts[0].trim());
-            String jsonBody = parts[1].trim();
-
-            System.out.println("Status Code: " + statusCode);
-
-            // Step 2: Parse JSON body
-            JsonElement element = JsonParser.parseString(jsonBody);
-            JsonObject rootObj = element.getAsJsonObject();
-
-            if (statusCode >= 400 && rootObj.has("errors")) {
-                JsonArray errors = rootObj.getAsJsonArray("errors");
-                for (JsonElement errorElem : errors) {
-                    JsonObject error = errorElem.getAsJsonObject();
-                    String title = error.has("title") ? error.get("title").getAsString() : "No title";
-                    String detail = error.has("detail") ? error.get("detail").getAsString() : "No detail";
-                    System.out.println("Error Title: " + title);
-                    System.out.println("Error Detail: " + detail);
-                }
-            } else if (statusCode == 200 && rootObj.has("data")) {
-                System.out.println("Success response with data.");
-            } else {
-                System.out.println("Unhandled response structure.");
+    private void handleSuccessResponse(String body) {
+        JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+        JsonObject data = json.getAsJsonObject("data");
+        if (data != null) {
+            JsonObject attributes = data.getAsJsonObject("attributes");
+            if (attributes != null) {
+                String accessToken = attributes.get("accessToken").getAsString();
+                String validUpto = attributes.get("accessTokenValidUpto").getAsString();
+                System.out.println("Access Token: " + accessToken);
+                System.out.println("Valid Upto: " + validUpto);
             }
+        }
+    }
 
-        } catch (JsonSyntaxException | NumberFormatException e) {
-            System.out.println("Error parsing response: " + e.getMessage());
+    private void handleErrorResponse(String body) {
+        JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+        JsonArray errors = json.getAsJsonArray("errors");
+
+        if (errors != null && errors.size() > 0) {
+            for (JsonElement errorElement : errors) {
+                JsonObject error = errorElement.getAsJsonObject();
+                String title = error.has("title") ? error.get("title").getAsString() : "No title";
+                System.out.println("Error Title: " + title);
+            }
+        } else {
+            System.out.println("Unknown error occurred");
         }
     }
 }
