@@ -1,47 +1,46 @@
-@ExtendWith(MockitoExtension.class)
-public class AuthServiceTest {
+import com.google.gson.*;
 
-    @Mock
-    private RestTemplate restTemplate;
+public class ResponseHandler {
 
-    private AuthService authService;
-    private final String tokenUrl = "http://example.com/token";
+    public static void main(String[] args) {
+        String response = "<400,{\"errors\":[{\"id\":\"d067afa19\",\"code\":\"BAD_REQUEST\",\"title\":\"Getting invalid response from Third Party Endpoint\",\"detail\":\"Bad Request:\"}]}>";
+        // String response = "<200,{\"data\":{\"type\":\"ZUORA\",\"attributes\":{\"accessToken\":\"78e1blfe43edb9\",\"accessTokenValidUpto\":\"2025-05-22T14:24:56.349Z\"}}}>";
 
-    @BeforeEach
-    void setUp() {
-        authService = new AuthService(restTemplate, tokenUrl);
+        processResponse(response);
     }
 
-    @Test
-    void testGetToken_success() {
-        // Arrange
-        String username = "testuser";
-        String password = "testpass";
-        String expectedToken = "mocked-token";
+    public static void processResponse(String response) {
+        try {
+            // Step 1: Remove angle brackets and split
+            String clean = response.replaceAll("[<>]", "");
+            String[] parts = clean.split(",", 2);  // Split only once at the first comma
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+            int statusCode = Integer.parseInt(parts[0].trim());
+            String jsonBody = parts[1].trim();
 
-        Map<String, String> body = new HashMap<>();
-        body.put("username", username);
-        body.put("password", password);
+            System.out.println("Status Code: " + statusCode);
 
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(expectedToken, HttpStatus.OK);
+            // Step 2: Parse JSON body
+            JsonElement element = JsonParser.parseString(jsonBody);
+            JsonObject rootObj = element.getAsJsonObject();
 
-        when(restTemplate.exchange(
-                eq(tokenUrl),
-                eq(HttpMethod.POST),
-                any(HttpEntity.class),
-                eq(String.class)
-        )).thenReturn(mockResponse);
+            if (statusCode >= 400 && rootObj.has("errors")) {
+                JsonArray errors = rootObj.getAsJsonArray("errors");
+                for (JsonElement errorElem : errors) {
+                    JsonObject error = errorElem.getAsJsonObject();
+                    String title = error.has("title") ? error.get("title").getAsString() : "No title";
+                    String detail = error.has("detail") ? error.get("detail").getAsString() : "No detail";
+                    System.out.println("Error Title: " + title);
+                    System.out.println("Error Detail: " + detail);
+                }
+            } else if (statusCode == 200 && rootObj.has("data")) {
+                System.out.println("Success response with data.");
+            } else {
+                System.out.println("Unhandled response structure.");
+            }
 
-        // Act
-        String actualToken = authService.getToken(username, password);
-
-        // Assert
-        assertEquals(expectedToken, actualToken);
-        verify(restTemplate, times(1))
-            .exchange(eq(tokenUrl), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
+        } catch (JsonSyntaxException | NumberFormatException e) {
+            System.out.println("Error parsing response: " + e.getMessage());
+        }
     }
 }
