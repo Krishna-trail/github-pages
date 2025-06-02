@@ -1,49 +1,51 @@
-import com.google.gson.*;
-import org.springframework.http.ResponseEntity;
+public class TokenManager {
 
-public class JobSchedulerResponseHandler {
+    private static String accessToken = null;
+    private static long tokenExpiryTimeMillis = 0;
 
-    private final Gson gson = new Gson();
-
-    public void handleResponse(ResponseEntity<String> responseEntity) {
-        int statusCode = responseEntity.getStatusCodeValue();
-        String body = responseEntity.getBody();
-
-        if (statusCode == 200) {
-            handleSuccessResponse(body);
-        } else if (statusCode >= 400) {
-            handleErrorResponse(body);
-        } else {
-            System.out.println("Unhandled status: " + statusCode);
+    public static String getAccessToken() {
+        if (accessToken != null && !isTokenExpired()) {
+            return accessToken;
         }
+
+        // Token is null or expired, call token API
+        fetchNewTokenFromApi();
+        return accessToken;
     }
 
-    private void handleSuccessResponse(String body) {
-        JsonObject json = new JsonParser().parse(body).getAsJsonObject();
-        JsonObject data = json.getAsJsonObject("data");
-        if (data != null) {
-            JsonObject attributes = data.getAsJsonObject("attributes");
-            if (attributes != null) {
-                String accessToken = attributes.get("accessToken").getAsString();
-                String validUpto = attributes.get("accessTokenValidUpto").getAsString();
-                System.out.println("Access Token: " + accessToken);
-                System.out.println("Valid Upto: " + validUpto);
-            }
-        }
+    private static boolean isTokenExpired() {
+        return System.currentTimeMillis() >= tokenExpiryTimeMillis;
     }
 
-    private void handleErrorResponse(String body) {
-        JsonObject json = new JsonParser().parse(body).getAsJsonObject();
-        JsonArray errors = json.getAsJsonArray("errors");
+    private static void fetchNewTokenFromApi() {
+        try {
+            // Send request (use your actual request object and URL)
+            ResponseEntity<String> response = restTemplate.postForEntity("https://api.example.com/token", request, String.class);
 
-        if (errors != null && errors.size() > 0) {
-            for (JsonElement errorElement : errors) {
-                JsonObject error = errorElement.getAsJsonObject();
-                String title = error.has("title") ? error.get("title").getAsString() : "No title";
-                System.out.println("Error Title: " + title);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode json = objectMapper.readTree(response.getBody());
+
+                JsonNode tokenNode = json.get("access_token");
+                JsonNode expiresInNode = json.get("expires_in");
+
+                if (tokenNode != null && !tokenNode.isNull() && expiresInNode != null && !expiresInNode.isNull()) {
+                    accessToken = tokenNode.asText();
+                    long expiresInSeconds = expiresInNode.asLong();
+                    tokenExpiryTimeMillis = System.currentTimeMillis() + (expiresInSeconds * 1000);
+                    return;
+                } else {
+                    LOG.error("Missing access_token or expires_in in response: " + response.getBody());
+                }
+            } else {
+                LOG.error("Failed to get token: " + response.getStatusCode() + " " + response.getBody());
             }
-        } else {
-            System.out.println("Unknown error occurred");
+        } catch (Exception e) {
+            LOG.error("Error while fetching token: " + e.getMessage(), e);
         }
+
+        // In case of failure, clear the token to force refresh next time
+        accessToken = null;
+        tokenExpiryTimeMillis = 0;
     }
 }
