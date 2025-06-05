@@ -1,39 +1,46 @@
-public static String getAccessToken() {
-    TokenHolder holder = tokenMap.get("token");
+public class YourControllerServlet extends HttpServlet {
 
-    if (holder != null && !holder.isExpired()) {
-        return holder.getToken(); // ✅ Use cached token
+    private static String escapeHtml(String input) {
+        if (input == null) return "";
+        return input.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#x27;");
     }
 
-    // Fetch new token if none or expired
-    try {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "client_credentials");
-        body.add("client_id", "your-client-id");
-        body.add("client_secret", "your-client-secret");
+        String givenname = "", familyname = "", phoneNumber = "", email = "";
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-
-        ResponseEntity<String> response = restTemplate.postForEntity("https://your-token-url", request, String.class);
-
-        if (response.getStatusCode() == HttpStatus.OK) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode json = objectMapper.readTree(response.getBody());
-
-            String token = json.get("access_token").asText();
-            long expiresIn = json.get("expires_in").asLong();
-
-            tokenMap.put("token", new TokenHolder(token, expiresIn)); // ✅ Replace with new
-            return token;
-        } else {
-            LOG.error("Token fetch failed: " + response.getStatusCode() + " " + response.getBody());
+        Cookie[] ck = request.getCookies();
+        if (ck != null) {
+            for (Cookie c : ck) {
+                switch (c.getName().toLowerCase()) {
+                    case "givenname":
+                        givenname = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
+                        break;
+                    case "familyname":
+                        familyname = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
+                        break;
+                    case "phonenumber":
+                        phoneNumber = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
+                        break;
+                    case "email":
+                        email = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
+                        break;
+                }
+            }
         }
-    } catch (Exception e) {
-        LOG.error("Error while fetching token: " + e.getMessage(), e);
-    }
 
-    return null;
+        // Pass sanitized data to JSP
+        request.setAttribute("givenname", givenname);
+        request.setAttribute("familyname", familyname);
+        request.setAttribute("phonenumber", phoneNumber);
+        request.setAttribute("email", email);
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/ROLBLoggedIn.jsp");
+        dispatcher.forward(request, response);
+    }
 }
