@@ -1,46 +1,19 @@
-public class YourControllerServlet extends HttpServlet {
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+    String user = (String) request.getAttribute("user");
+    String type = (String) request.getAttribute("type");
 
-    private static String escapeHtml(String input) {
-        if (input == null) return "";
-        return input.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\"", "&quot;")
-                    .replace("'", "&#x27;");
+    // Condition check - example: forward if type is admin
+    if ("admin".equalsIgnoreCase(type)) {
+        RequestDispatcher rd = request.getRequestDispatcher("index1.jsp");
+        request.setAttribute("user", user);
+        request.setAttribute("type", type);
+        rd.forward(request, response);
+        return;
     }
-
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        String givenname = "", familyname = "", phoneNumber = "", email = "";
-
-        Cookie[] ck = request.getCookies();
-        if (ck != null) {
-            for (Cookie c : ck) {
-                switch (c.getName().toLowerCase()) {
-                    case "givenname":
-                        givenname = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
-                        break;
-                    case "familyname":
-                        familyname = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
-                        break;
-                    case "phonenumber":
-                        phoneNumber = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
-                        break;
-                    case "email":
-                        email = escapeHtml(URLDecoder.decode(c.getValue(), "UTF-8"));
-                        break;
-                }
-            }
-        }
-
-        // Pass sanitized data to JSP
-        request.setAttribute("givenname", givenname);
-        request.setAttribute("familyname", familyname);
-        request.setAttribute("phonenumber", phoneNumber);
-        request.setAttribute("email", email);
-
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/ROLBLoggedIn.jsp");
-        dispatcher.forward(request, response);
-    }
-}
+%>
+<html>
+<body>
+    <h3>Redirecting to login page...</h3>
+</body>
+</html>
