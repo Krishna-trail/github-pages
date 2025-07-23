@@ -1,19 +1,66 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%
-    String user = (String) request.getAttribute("user");
-    String type = (String) request.getAttribute("type");
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.directory.*;
+import javax.naming.ldap.*;
 
-    // Condition check - example: forward if type is admin
-    if ("admin".equalsIgnoreCase(type)) {
-        RequestDispatcher rd = request.getRequestDispatcher("index1.jsp");
-        request.setAttribute("user", user);
-        request.setAttribute("type", type);
-        rd.forward(request, response);
-        return;
+import java.util.Hashtable;
+
+public class LdapPagedSearch {
+
+    public static void main(String[] args) throws Exception {
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, "ldap://your-ldap-host:389");
+        env.put(Context.SECURITY_AUTHENTICATION, "simple");
+        env.put(Context.SECURITY_PRINCIPAL, "cn=admin,dc=example,dc=com");
+        env.put(Context.SECURITY_CREDENTIALS, "password");
+
+        // Cast to LdapContext to use pagination
+        LdapContext ctx = new InitialLdapContext(env, null);
+
+        int pageSize = 1000;
+        byte[] cookie = null;
+
+        ctx.setRequestControls(new Control[]{
+            new PagedResultsControl(pageSize, Control.CRITICAL)
+        });
+
+        do {
+            NamingEnumeration<SearchResult> results = ctx.search(
+                    "dc=example,dc=com",           // your base DN
+                    "(objectClass=person)",        // your filter
+                    getSearchControls());
+
+            while (results != null && results.hasMore()) {
+                SearchResult result = results.next();
+                System.out.println("Name: " + result.getNameInNamespace());
+            }
+
+            // Get the cookie from the response controls
+            cookie = null;
+            Control[] controls = ctx.getResponseControls();
+            if (controls != null) {
+                for (Control control : controls) {
+                    if (control instanceof PagedResultsResponseControl) {
+                        cookie = ((PagedResultsResponseControl) control).getCookie();
+                    }
+                }
+            }
+
+            // Set the cookie again for next page
+            ctx.setRequestControls(new Control[]{
+                new PagedResultsControl(pageSize, cookie, Control.CRITICAL)
+            });
+
+        } while (cookie != null && cookie.length != 0);
+
+        ctx.close();
     }
-%>
-<html>
-<body>
-    <h3>Redirecting to login page...</h3>
-</body>
-</html>
+
+    private static SearchControls getSearchControls() {
+        SearchControls controls = new SearchControls();
+        controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        controls.setReturningAttributes(null); // null means all attributes
+        return controls;
+    }
+}
