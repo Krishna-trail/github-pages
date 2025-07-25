@@ -1,75 +1,17 @@
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
-import javax.naming.directory.*;
-import javax.naming.ldap.*;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.LinkedHashMap;
+<dependency>
+    <groupId>javax.xml.bind</groupId>
+    <artifactId>jaxb-api</artifactId>
+    <version>2.3.1</version>
+</dependency>
 
-public class LdapService {
+<dependency>
+    <groupId>com.sun.xml.bind</groupId>
+    <artifactId>jaxb-core</artifactId>
+    <version>2.3.0.1</version>
+</dependency>
 
-    public Map<String, Attributes> fetchAllLdapUsers() {
-        Map<String, Attributes> resultMap = new LinkedHashMap<>();
-        try {
-            Hashtable<String, String> env = new Hashtable<>();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, "ldap://your-ldap-host:389");
-            env.put(Context.SECURITY_AUTHENTICATION, "simple");
-            env.put(Context.SECURITY_PRINCIPAL, "cn=admin,dc=example,dc=com");
-            env.put(Context.SECURITY_CREDENTIALS, "your-password");
-
-            LdapContext ctx = new InitialLdapContext(env, null);
-
-            int pageSize = 1000;
-            byte[] cookie = null;
-
-            ctx.setRequestControls(new Control[]{
-                new PagedResultsControl(pageSize, Control.CRITICAL)
-            });
-
-            do {
-                NamingEnumeration<SearchResult> results = ctx.search(
-                        "dc=example,dc=com", // base DN
-                        "(objectClass=person)", // your LDAP filter
-                        getSearchControls());
-
-                while (results != null && results.hasMore()) {
-                    SearchResult sr = results.next();
-                    String dn = sr.getNameInNamespace();
-                    Attributes attrs = sr.getAttributes();
-                    resultMap.put(dn, attrs);
-                }
-
-                // Handle cookie for pagination
-                cookie = null;
-                Control[] controls = ctx.getResponseControls();
-                if (controls != null) {
-                    for (Control control : controls) {
-                        if (control instanceof PagedResultsResponseControl) {
-                            cookie = ((PagedResultsResponseControl) control).getCookie();
-                        }
-                    }
-                }
-
-                ctx.setRequestControls(new Control[]{
-                    new PagedResultsControl(pageSize, cookie, Control.CRITICAL)
-                });
-
-            } while (cookie != null && cookie.length != 0);
-
-            ctx.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return resultMap;
-    }
-
-    private static SearchControls getSearchControls() {
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        sc.setReturningAttributes(null); // all attributes
-        return sc;
-    }
-}
+<dependency>
+    <groupId>com.sun.xml.bind</groupId>
+    <artifactId>jaxb-impl</artifactId>
+    <version>2.3.2</version>
+</dependency>
