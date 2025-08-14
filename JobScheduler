@@ -1,14 +1,44 @@
-# Root Logger setup
-log4j.rootLogger=DEBUG, console, file
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import java.util.Map;
 
-# Console appender
-log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.layout=org.apache.log4j.PatternLayout
-log4j.appender.console.layout.ConversionPattern=%d{HH:mm:ss} %-5p %c{1}:%L - %m%n
+public class UserServiceTest {
 
-# File appender
-log4j.appender.file=org.apache.log4j.FileAppender
-log4j.appender.file.File=logs/myapp.log
-log4j.appender.file.Append=true
-log4j.appender.file.layout=org.apache.log4j.PatternLayout
-log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} %-5p %c - %m%n
+    @Test
+    void testSaveUser_ValidInputs() {
+        UserService service = new UserService();
+        Map<String, String> result = service.saveUser("john", "1234");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("john"));
+        assertEquals("1234", result.get("john"));
+    }
+
+    @Test
+    void testSaveUser_NullUsername() {
+        UserService service = new UserService();
+        Map<String, String> result = service.saveUser(null, "1234");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testSaveUser_NullPassword() {
+        UserService service = new UserService();
+        Map<String, String> result = service.saveUser("john", null);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testSaveUser_BothNull() {
+        UserService service = new UserService();
+        Map<String, String> result = service.saveUser(null, null);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+}
