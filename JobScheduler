@@ -1,40 +1,50 @@
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(MockitoExtension.class)
 class MyServiceTest {
 
     @Mock
-    private Configuration config;
+    private AttrMap attrMap;
 
-    @InjectMocks
-    private MyService myService;
+    @Mock
+    private AttrValue attrValue; // class returned by attrMap.get(...)
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    private MyService myService = new MyService();
+
+    @Test
+    void testKeyMissing_WhenKeyNotPresent() {
+        when(attrMap.containsKey(MyService.CLIENTID)).thenReturn(false);
+
+        boolean result = myService.keyMissing(attrMap);
+
+        assertTrue(result);
     }
 
     @Test
-    void testConfigure_SetsValuesCorrectly() {
-        // Arrange
-        when(config.getFieldValue(MyService.ALLOWED)).thenReturn("YES");
-        when(config.getFieldValue(MyService.EXCEPTION)).thenReturn("NO");
+    void testKeyMissing_WhenValueIsEmpty() {
+        when(attrMap.containsKey(MyService.CLIENTID)).thenReturn(true);
+        when(attrMap.get(MyService.ID)).thenReturn(attrValue);
+        when(attrValue.getValue()).thenReturn("");
 
-        // Act
-        myService.configure(config);
+        boolean result = myService.keyMissing(attrMap);
 
-        // Assert
-        assertEquals("YES", myService.getAllowed());
-        assertEquals("NO", myService.getException());
+        assertTrue(result);
+    }
 
-        // Verify interactions
-        verify(config).getFieldValue(MyService.ALLOWED);
-        verify(config).getFieldValue(MyService.EXCEPTION);
+    @Test
+    void testKeyMissing_WhenValueIsNotEmpty() {
+        when(attrMap.containsKey(MyService.CLIENTID)).thenReturn(true);
+        when(attrMap.get(MyService.ID)).thenReturn(attrValue);
+        when(attrValue.getValue()).thenReturn("abc");
+
+        boolean result = myService.keyMissing(attrMap);
+
+        assertFalse(result);
     }
 }
