@@ -1,44 +1,40 @@
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.Map;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-public class UserServiceTest {
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-    @Test
-    void testSaveUser_ValidInputs() {
-        UserService service = new UserService();
-        Map<String, String> result = service.saveUser("john", "1234");
+class MyServiceTest {
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertTrue(result.containsKey("john"));
-        assertEquals("1234", result.get("john"));
+    @Mock
+    private Configuration config;
+
+    @InjectMocks
+    private MyService myService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testSaveUser_NullUsername() {
-        UserService service = new UserService();
-        Map<String, String> result = service.saveUser(null, "1234");
+    void testConfigure_SetsValuesCorrectly() {
+        // Arrange
+        when(config.getFieldValue(MyService.ALLOWED)).thenReturn("YES");
+        when(config.getFieldValue(MyService.EXCEPTION)).thenReturn("NO");
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
+        // Act
+        myService.configure(config);
 
-    @Test
-    void testSaveUser_NullPassword() {
-        UserService service = new UserService();
-        Map<String, String> result = service.saveUser("john", null);
+        // Assert
+        assertEquals("YES", myService.getAllowed());
+        assertEquals("NO", myService.getException());
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testSaveUser_BothNull() {
-        UserService service = new UserService();
-        Map<String, String> result = service.saveUser(null, null);
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        // Verify interactions
+        verify(config).getFieldValue(MyService.ALLOWED);
+        verify(config).getFieldValue(MyService.EXCEPTION);
     }
 }
