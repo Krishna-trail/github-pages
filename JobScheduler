@@ -3,6 +3,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
+
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,41 +12,32 @@ import static org.junit.jupiter.api.Assertions.*;
 class MyServiceTest {
 
     @Mock
-    private AttrMap attrMap;
-
-    @Mock
-    private AttrValue attrValue; // class returned by attrMap.get(...)
-
-    private MyService myService = new MyService();
+    private Configuration config;
 
     @Test
-    void testKeyMissing_WhenKeyNotPresent() {
-        when(attrMap.containsKey(MyService.CLIENTID)).thenReturn(false);
+    void testConfigureSetsPrivateFields() throws Exception {
+        // Arrange
+        MyService service = new MyService();
+        when(config.getFieldValue("List of allowed")).thenReturn("ALLOW123");
+        when(config.getFieldValue("List of Exception IDs")).thenReturn("EXC999");
 
-        boolean result = myService.keyMissing(attrMap);
+        // Act
+        service.configure(config);
 
-        assertTrue(result);
-    }
+        // Assert private field "allowed"
+        Field allowedField = MyService.class.getDeclaredField("allowed");
+        allowedField.setAccessible(true);
+        String allowedValue = (String) allowedField.get(service);
+        assertEquals("ALLOW123", allowedValue);
 
-    @Test
-    void testKeyMissing_WhenValueIsEmpty() {
-        when(attrMap.containsKey(MyService.CLIENTID)).thenReturn(true);
-        when(attrMap.get(MyService.ID)).thenReturn(attrValue);
-        when(attrValue.getValue()).thenReturn("");
+        // Assert private field "exceptionIds"
+        Field exceptionField = MyService.class.getDeclaredField("exceptionIds");
+        exceptionField.setAccessible(true);
+        String exceptionValue = (String) exceptionField.get(service);
+        assertEquals("EXC999", exceptionValue);
 
-        boolean result = myService.keyMissing(attrMap);
-
-        assertTrue(result);
-    }
-
-    @Test
-    void testKeyMissing_WhenValueIsNotEmpty() {
-        when(attrMap.containsKey(MyService.CLIENTID)).thenReturn(true);
-        when(attrMap.get(MyService.ID)).thenReturn(attrValue);
-        when(attrValue.getValue()).thenReturn("abc");
-
-        boolean result = myService.keyMissing(attrMap);
-
-        assertFalse(result);
+        // Verify interactions with mock
+        verify(config).getFieldValue("List of allowed");
+        verify(config).getFieldValue("List of Exception IDs");
     }
 }
