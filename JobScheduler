@@ -1,43 +1,77 @@
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.lang.reflect.Field;
-
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-@ExtendWith(MockitoExtension.class)
-class MyServiceTest {
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+@RunWith(MockitoJUnitRunner.class)
+public class PasswordCredentialProcessorTest {
 
     @Mock
-    private Configuration config;
+    private ArtifactPersistenceService persistenceService;
+
+    @InjectMocks
+    private PasswordCredentialProcessor processor; // class where method is defined
+
+    private static final String VALID_USERNAME = "testUser";
+    private static final String VALID_REFID = "ref123";
+
+    @Before
+    public void setup() {
+        // Stub static factory call
+        StateMgmtFactory.setArtifactPersistenceService(persistenceService);
+    }
+
+    @Test(expected = PasswordValidationException.class)
+    public void testNullUsernameThrowsException() throws Exception {
+        processor.processPasswordCredential(null, VALID_REFID);
+    }
+
+    @Test(expected = PasswordValidationException.class)
+    public void testEmptyRefIdThrowsException() throws Exception {
+        processor.processPasswordCredential(VALID_USERNAME, "");
+    }
+
+    @Test(expected = UsernameRecoveryException.class)
+    public void testInvalidUsernameThrowsException() throws Exception {
+        // assume regex requires only digits → stub Encode.forJava
+        processor.processPasswordCredential("invalid-username!", VALID_REFID);
+    }
+
+    @Test(expected = PasswordValidationException.class)
+    public void testInvalidRefIdThrowsException() throws Exception {
+        // return null from validate input
+        processor.processPasswordCredential(VALID_USERNAME, "###");
+    }
+
+    @Test(expected = RefIdCredentialException.class)
+    public void testNullMessageFromPersistenceThrowsException() throws Exception {
+        byte[] refBytes = new byte[]{1,2,3};
+        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(null);
+
+        processor.processPasswordCredential(VALID_USERNAME, VALID_REFID);
+    }
 
     @Test
-    void testConfigureSetsPrivateFields() throws Exception {
-        // Arrange
-        MyService service = new MyService();
-        when(config.getFieldValue("List of allowed")).thenReturn("ALLOW123");
-        when(config.getFieldValue("List of Exception IDs")).thenReturn("EXC999");
+    public void testValidCaseReturnsAttributeMap() throws Exception {
+        // Mock message
+        Map<Object,Object> attri = new HashMap<>();
+        attri.put("key1", new AttributeValue("value1"));
+        attri.put("com.pingidentity.plugin.instanceid", new AttributeValue("adapter1"));
 
-        // Act
-        service.configure(config);
+        ArtifactPersistenceService.Message message = mock(ArtifactPersistenceService.Message.class);
+        when(message.getMsg()).thenReturn(attri);
+        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(message);
 
-        // Assert private field "allowed"
-        Field allowedField = MyService.class.getDeclaredField("allowed");
-        allowedField.setAccessible(true);
-        String allowedValue = (String) allowedField.get(service);
-        assertEquals("ALLOW123", allowedValue);
+        AttributeMap result = processor.processPasswordCredential(VALID_USERNAME, VALID_REFID);
 
-        // Assert private field "exceptionIds"
-        Field exceptionField = MyService.class.getDeclaredField("exceptionIds");
-        exceptionField.setAccessible(true);
-        String exceptionValue = (String) exceptionField.get(service);
-        assertEquals("EXC999", exceptionValue);
-
-        // Verify interactions with mock
-        verify(config).getFieldValue("List of allowed");
-        verify(config).getFieldValue("List of Exception IDs");
+        assertNotNull(result);
+        assertEquals("value1", result.get("key1"));
     }
 }
