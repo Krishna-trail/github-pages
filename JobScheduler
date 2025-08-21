@@ -1,31 +1,93 @@
-<!-- JUnit 4 -->
-<dependency>
-    <groupId>junit</groupId>
-    <artifactId>junit</artifactId>
-    <version>4.13.2</version>
-    <scope>test</scope>
-</dependency>
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
-<!-- Mockito -->
-<dependency>
-    <groupId>org.mockito</groupId>
-    <artifactId>mockito-core</artifactId>
-    <version>3.12.4</version>
-    <scope>test</scope>
-</dependency>
+import java.util.HashMap;
+import java.util.Map;
 
-<!-- PowerMock for JUnit 4 -->
-<dependency>
-    <groupId>org.powermock</groupId>
-    <artifactId>powermock-module-junit4</artifactId>
-    <version>2.0.9</version>
-    <scope>test</scope>
-</dependency>
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-<!-- PowerMock for Mockito -->
-<dependency>
-    <groupId>org.powermock</groupId>
-    <artifactId>powermock-api-mockito2</artifactId>
-    <version>2.0.9</version>
-    <scope>test</scope>
-</dependency>
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ StateMgmtFactory.class, Encode.class }) // classes with static methods
+@PowerMockIgnore({"javax.crypto.*", "javax.net.ssl.*"})   // avoid classloader issues
+public class PasswordCredentialProcessorTest {
+
+    @Mock
+    private ArtifactPersistenceService persistenceService;
+
+    private PasswordCredentialProcessor processor;
+
+    private static final String VALID_USERNAME = "testUser";
+    private static final String VALID_REFID = "ref123";
+
+    @Before
+    public void setup() {
+        processor = new PasswordCredentialProcessor();
+
+        // Mock static methods
+        PowerMockito.mockStatic(StateMgmtFactory.class);
+        PowerMockito.mockStatic(Encode.class);
+
+        when(StateMgmtFactory.getArtifactPersistenceService())
+            .thenReturn(persistenceService);
+
+        // Default encode mock just returns the same string
+        when(Encode.forJava(anyString())).thenAnswer(inv -> inv.getArguments()[0]);
+    }
+
+    @Test
+    public void testNullUsernameReturnsNull() throws Exception {
+        AttributeMap result = processor.processPasswordCredential(null, VALID_REFID);
+        assertNull(result); // because method catches exception and returns null
+    }
+
+    @Test
+    public void testEmptyRefIdReturnsNull() throws Exception {
+        AttributeMap result = processor.processPasswordCredential(VALID_USERNAME, "");
+        assertNull(result);
+    }
+
+    @Test
+    public void testInvalidUsernameReturnsNull() throws Exception {
+        when(Encode.forJava("invalid-username!")).thenReturn("invalid-username!");
+        AttributeMap result = processor.processPasswordCredential("invalid-username!", VALID_REFID);
+        assertNull(result);
+    }
+
+    @Test
+    public void testInvalidRefIdReturnsNull() throws Exception {
+        AttributeMap result = processor.processPasswordCredential(VALID_USERNAME, "###");
+        assertNull(result);
+    }
+
+    @Test
+    public void testNullMessageFromPersistenceReturnsNull() throws Exception {
+        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(null);
+        AttributeMap result = processor.processPasswordCredential(VALID_USERNAME, VALID_REFID);
+        assertNull(result);
+    }
+
+    @Test
+    public void testValidCaseReturnsAttributeMap() throws Exception {
+        // Mock persistence service return
+        Map<Object,Object> attri = new HashMap<>();
+        attri.put("key1", new AttributeValue("value1"));
+        attri.put("com.pingidentity.plugin.instanceid", new AttributeValue("adapter1"));
+
+        ArtifactPersistenceService.Message message = mock(ArtifactPersistenceService.Message.class);
+        when(message.getMsg()).thenReturn(attri);
+
+        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(message);
+
+        AttributeMap result = processor.processPasswordCredential(VALID_USERNAME, VALID_REFID);
+
+        assertNotNull(result);
+        assertEquals("value1", result.get("key1"));
+    }
+}
