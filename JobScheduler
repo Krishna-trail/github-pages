@@ -1,6 +1,87 @@
-@PowerMockIgnore({
-    "javax.crypto.*",
-    "javax.net.ssl.*",
-    "javax.management.*",
-    "com.pingidentity.*"   // <-- ignore vendor classes
-})
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({StateMgmtFactory.class, HexBin.class})
+public class PasswordCredentialProcessorTest {
+
+    @Mock
+    private ArtifactPersistenceService persistenceService;
+
+    @Mock
+    private ArtifactPersistenceService.Message message;
+
+    private PasswordCredentialProcessor processor;
+
+    @Before
+    public void setup() {
+        processor = new PasswordCredentialProcessor();
+        PowerMockito.mockStatic(StateMgmtFactory.class);
+        PowerMockito.mockStatic(HexBin.class);
+    }
+
+    @Test(expected = PasswordValidationException.class)
+    public void testNullUsernameThrowsException() throws Exception {
+        processor.processPasswordCredential(null, "ref123");
+    }
+
+    @Test(expected = PasswordValidationException.class)
+    public void testEmptyRefIdThrowsException() throws Exception {
+        processor.processPasswordCredential("user1", "");
+    }
+
+    @Test(expected = UsernameRecoveryException.class)
+    public void testInvalidUsernameRegexThrowsException() throws Exception {
+        // Mock Encode.forJava(...) to return invalid username
+        String invalidUsername = "###";
+        processor.processPasswordCredential(invalidUsername, "ref123");
+    }
+
+    @Test(expected = PasswordValidationException.class)
+    public void testNullRefTokenNameThrowsException() throws Exception {
+        when(StateMgmtFactory.getArtifactPersistenceService()).thenReturn(persistenceService);
+        PowerMockito.when(HexBin.stringToBytes(anyString())).thenReturn("123".getBytes());
+
+        // force getValidateInput to return null
+        PasswordCredentialProcessor spyProcessor = PowerMockito.spy(processor);
+        PowerMockito.doReturn(null).when(spyProcessor, "getValidateInput", anyString(), anyString());
+
+        spyProcessor.processPasswordCredential("validUser", "ref123");
+    }
+
+    @Test(expected = RefIdCredentialException.class)
+    public void testRetrieveArtifactThrowsException() throws Exception {
+        when(StateMgmtFactory.getArtifactPersistenceService()).thenReturn(persistenceService);
+        PowerMockito.when(HexBin.stringToBytes(anyString())).thenReturn("123".getBytes());
+
+        when(persistenceService.retrieveAndRemoveArtifact(any())).thenThrow(new ArtifactPersistenceServiceException("fail"));
+
+        processor.processPasswordCredential("validUser", "ref123");
+    }
+
+    @Test
+    public void testValidFlowReturnsAttributeMap() throws Exception {
+        when(StateMgmtFactory.getArtifactPersistenceService()).thenReturn(persistenceService);
+        PowerMockito.when(HexBin.stringToBytes(anyString())).thenReturn("123".getBytes());
+
+        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(message);
+
+        Map<Object, Object> mockMap = new HashMap<>();
+        mockMap.put("key1", new AttributeValue("value1"));
+        mockMap.put("com.pingidentity.plugin.instanceid", new AttributeValue("allowedAdapter"));
+
+        when(message.getMsg()).thenReturn(mockMap);
+
+        AttributeMap result = processor.processPasswordCredential("validUser", "ref123");
+
+        assertNotNull(result);
+        assertEquals("value1", result.get("key1"));
+    }
+}
