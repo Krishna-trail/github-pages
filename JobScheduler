@@ -1,77 +1,31 @@
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+<!-- JUnit 4 -->
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
 
-import java.util.HashMap;
-import java.util.Map;
+<!-- Mockito -->
+<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-core</artifactId>
+    <version>3.12.4</version>
+    <scope>test</scope>
+</dependency>
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.*;
-import org.mockito.junit.MockitoJUnitRunner;
+<!-- PowerMock for JUnit 4 -->
+<dependency>
+    <groupId>org.powermock</groupId>
+    <artifactId>powermock-module-junit4</artifactId>
+    <version>2.0.9</version>
+    <scope>test</scope>
+</dependency>
 
-@RunWith(MockitoJUnitRunner.class)
-public class PasswordCredentialProcessorTest {
-
-    @Mock
-    private ArtifactPersistenceService persistenceService;
-
-    @InjectMocks
-    private PasswordCredentialProcessor processor; // class where method is defined
-
-    private static final String VALID_USERNAME = "testUser";
-    private static final String VALID_REFID = "ref123";
-
-    @Before
-    public void setup() {
-        // Stub static factory call
-        StateMgmtFactory.setArtifactPersistenceService(persistenceService);
-    }
-
-    @Test(expected = PasswordValidationException.class)
-    public void testNullUsernameThrowsException() throws Exception {
-        processor.processPasswordCredential(null, VALID_REFID);
-    }
-
-    @Test(expected = PasswordValidationException.class)
-    public void testEmptyRefIdThrowsException() throws Exception {
-        processor.processPasswordCredential(VALID_USERNAME, "");
-    }
-
-    @Test(expected = UsernameRecoveryException.class)
-    public void testInvalidUsernameThrowsException() throws Exception {
-        // assume regex requires only digits → stub Encode.forJava
-        processor.processPasswordCredential("invalid-username!", VALID_REFID);
-    }
-
-    @Test(expected = PasswordValidationException.class)
-    public void testInvalidRefIdThrowsException() throws Exception {
-        // return null from validate input
-        processor.processPasswordCredential(VALID_USERNAME, "###");
-    }
-
-    @Test(expected = RefIdCredentialException.class)
-    public void testNullMessageFromPersistenceThrowsException() throws Exception {
-        byte[] refBytes = new byte[]{1,2,3};
-        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(null);
-
-        processor.processPasswordCredential(VALID_USERNAME, VALID_REFID);
-    }
-
-    @Test
-    public void testValidCaseReturnsAttributeMap() throws Exception {
-        // Mock message
-        Map<Object,Object> attri = new HashMap<>();
-        attri.put("key1", new AttributeValue("value1"));
-        attri.put("com.pingidentity.plugin.instanceid", new AttributeValue("adapter1"));
-
-        ArtifactPersistenceService.Message message = mock(ArtifactPersistenceService.Message.class);
-        when(message.getMsg()).thenReturn(attri);
-        when(persistenceService.retrieveAndRemoveArtifact(any())).thenReturn(message);
-
-        AttributeMap result = processor.processPasswordCredential(VALID_USERNAME, VALID_REFID);
-
-        assertNotNull(result);
-        assertEquals("value1", result.get("key1"));
-    }
-}
+<!-- PowerMock for Mockito -->
+<dependency>
+    <groupId>org.powermock</groupId>
+    <artifactId>powermock-api-mockito2</artifactId>
+    <version>2.0.9</version>
+    <scope>test</scope>
+</dependency>
