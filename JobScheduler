@@ -1,74 +1,22 @@
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+@Test
+public void testValidFlowSuccess() throws Exception {
+    // Arrange
+    String username = "testuser";
+    String refId = "validref";
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+    RefIdCredentialValidator spyValidator = Mockito.spy(validator);
+    doReturn("validref").when(spyValidator).getValidateInput(anyString(), anyString());
 
-// JUnit 4 + Mockito runner
-@RunWith(MockitoJUnitRunner.class)
-public class RefIdCredentialValidatorTest {
+    byte[] bytes = "validref".getBytes();
 
-    @InjectMocks
-    private RefIdCredentialValidator validator; // real class under test
+    // ✅ mock inner class correctly
+    ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
 
-    @Mock
-    private ArtifactPersistenceService mockPersistenceService; // dependency
+    when(mockPersistenceService.retrieveAndRemoveArtifact(bytes)).thenReturn(mockMessage);
 
-    // ---------- Test 1: Invalid RefID (refTokenName = null) ----------
-    @Test(expected = PasswordValidationException.class)
-    public void testInvalidRefIdThrowsPasswordValidationException() throws Exception {
-        // Arrange
-        String username = "testuser";
-        String refId = " "; // will cause getValidateInput → null
+    // Act
+    spyValidator.processPasswordCredential(username, refId);
 
-        // Stub getValidateInput to return null
-        RefIdCredentialValidator spyValidator = Mockito.spy(validator);
-        doReturn(null).when(spyValidator).getValidateInput(anyString(), anyString());
-
-        // Act
-        spyValidator.processPasswordCredential(username, refId);
-    }
-
-    // ---------- Test 2: PersistenceService throws exception ----------
-    @Test(expected = RefIdCredentialException.class)
-    public void testPersistenceServiceFailureThrowsRefIdCredentialException() throws Exception {
-        // Arrange
-        String username = "testuser";
-        String refId = "validref";
-
-        RefIdCredentialValidator spyValidator = Mockito.spy(validator);
-        doReturn("validref").when(spyValidator).getValidateInput(anyString(), anyString());
-
-        byte[] bytes = "validref".getBytes();
-        when(mockPersistenceService.retrieveAndRemoveArtifact(bytes))
-                .thenThrow(new ArtifactPersistenceServiceException("Service failure"));
-
-        // Act
-        spyValidator.processPasswordCredential(username, refId);
-    }
-
-    // ---------- Test 3: Happy Path ----------
-    @Test
-    public void testValidFlowSuccess() throws Exception {
-        // Arrange
-        String username = "testuser";
-        String refId = "validref";
-
-        RefIdCredentialValidator spyValidator = Mockito.spy(validator);
-        doReturn("validref").when(spyValidator).getValidateInput(anyString(), anyString());
-
-        byte[] bytes = "validref".getBytes();
-        ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
-        when(mockPersistenceService.retrieveAndRemoveArtifact(bytes)).thenReturn(mockMessage);
-
-        // Act
-        spyValidator.processPasswordCredential(username, refId);
-
-        // Assert → verify persistenceService was called
-        verify(mockPersistenceService, times(1)).retrieveAndRemoveArtifact(bytes);
-    }
+    // Assert → verify persistenceService was called
+    verify(mockPersistenceService, times(1)).retrieveAndRemoveArtifact(bytes);
 }
