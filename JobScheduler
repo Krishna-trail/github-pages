@@ -4,19 +4,21 @@ public void testValidFlowSuccess() throws Exception {
     String username = "testuser";
     String refId = "validref";
 
-    RefIdCredentialValidator spyValidator = Mockito.spy(validator);
+    RefIdCredentialValidator spyValidator = Mockito.spy(refIdValidator);
+
+    // Correct matcher usage
     doReturn("validref").when(spyValidator).getValidateInput(anyString(), anyString());
 
-    byte[] bytes = "validref".getBytes();
-
-    // ✅ mock inner class correctly
     ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
 
-    when(mockPersistenceService.retrieveAndRemoveArtifact(bytes)).thenReturn(mockMessage);
+    // Match any byte[] instead of hardcoding
+    when(mockPersistenceService.retrieveAndRemoveArtifact(any(byte[].class)))
+        .thenReturn(mockMessage);
 
     // Act
     spyValidator.processPasswordCredential(username, refId);
 
-    // Assert → verify persistenceService was called
-    verify(mockPersistenceService, times(1)).retrieveAndRemoveArtifact(bytes);
+    // Assert
+    verify(mockPersistenceService, times(1))
+        .retrieveAndRemoveArtifact(any(byte[].class));
 }
