@@ -1,36 +1,18 @@
-import static org.mockito.Mockito.*;
+@Test
+public void testValidFlowSuccess() throws Exception {
+    String username = "testuser";
+    String refId = "validref";
 
-import org.junit.Test;
-import org.mockito.MockedStatic;
+    // Spy on instance methods only
+    RefIdCredentialValidator spyValidator = Mockito.spy(refIdValidator);
 
-public class RefIdCredentialValidatorTest {
+    ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
+    when(mockPersistenceService.retrieveAndRemoveArtifact(any(byte[].class)))
+        .thenReturn(mockMessage);
 
-    @Test
-    public void testValidFlowSuccess() throws Exception {
-        String username = "testuser";
-        String refId = "validref";
+    // Act - the real static method will be called
+    spyValidator.processPasswordCredential(username, refId);
 
-        // Spy on your validator instance
-        RefIdCredentialValidator spyValidator = spy(refIdValidator);
-
-        // Mock static method
-        try (MockedStatic<RefIdCredentialValidator> mockedStatic = mockStatic(RefIdCredentialValidator.class)) {
-
-            // Stub the static method with any String arguments
-            mockedStatic.when(() -> RefIdCredentialValidator.getValidateInput(anyString(), anyString()))
-                        .thenReturn("validref");
-
-            // Mock inner class and persistence service
-            ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
-            when(mockPersistenceService.retrieveAndRemoveArtifact(any(byte[].class)))
-                .thenReturn(mockMessage);
-
-            // Act
-            spyValidator.processPasswordCredential(username, refId);
-
-            // Assert
-            verify(mockPersistenceService, times(1))
-                .retrieveAndRemoveArtifact(any(byte[].class));
-        }
-    }
+    // Assert
+    verify(mockPersistenceService, times(1)).retrieveAndRemoveArtifact(any(byte[].class));
 }
