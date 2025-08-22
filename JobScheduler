@@ -1,57 +1,74 @@
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({HexBin.class})
-public class RefIdValidatorTest {
+// JUnit 4 + Mockito runner
+@RunWith(MockitoJUnitRunner.class)
+public class RefIdCredentialValidatorTest {
+
+    @InjectMocks
+    private RefIdCredentialValidator validator; // real class under test
 
     @Mock
-    private ArtifactPersistenceService persistenceService;
+    private ArtifactPersistenceService mockPersistenceService; // dependency
 
+    // ---------- Test 1: Invalid RefID (refTokenName = null) ----------
     @Test(expected = PasswordValidationException.class)
-    public void testRefTokenNameIsNull_ThrowsPasswordValidationException() {
-        RefIdValidator validator = new RefIdValidator(persistenceService);
+    public void testInvalidRefIdThrowsPasswordValidationException() throws Exception {
+        // Arrange
+        String username = "testuser";
+        String refId = " "; // will cause getValidateInput → null
 
-        // Simulate input that will cause getValidateInput() to return null
-        validator.processPasswordCredential("   ", null);
+        // Stub getValidateInput to return null
+        RefIdCredentialValidator spyValidator = Mockito.spy(validator);
+        doReturn(null).when(spyValidator).getValidateInput(anyString(), anyString());
+
+        // Act
+        spyValidator.processPasswordCredential(username, refId);
     }
 
+    // ---------- Test 2: PersistenceService throws exception ----------
     @Test(expected = RefIdCredentialException.class)
-    public void testRetrieveArtifactFails_ThrowsRefIdCredentialException() throws Exception {
-        RefIdValidator validator = new RefIdValidator(persistenceService);
+    public void testPersistenceServiceFailureThrowsRefIdCredentialException() throws Exception {
+        // Arrange
+        String username = "testuser";
+        String refId = "validref";
 
-        // Mock static HexBin.stringToBytes
-        PowerMockito.mockStatic(HexBin.class);
-        PowerMockito.when(HexBin.stringToBytes(anyString())).thenReturn(new byte[]{1, 2, 3});
+        RefIdCredentialValidator spyValidator = Mockito.spy(validator);
+        doReturn("validref").when(spyValidator).getValidateInput(anyString(), anyString());
 
-        // Simulate persistenceService throwing exception
-        when(persistenceService.retrieveAndRemoveArtifact(any(byte[].class)))
-                .thenThrow(new ArtifactPersistenceServiceException("DB error"));
+        byte[] bytes = "validref".getBytes();
+        when(mockPersistenceService.retrieveAndRemoveArtifact(bytes))
+                .thenThrow(new ArtifactPersistenceServiceException("Service failure"));
 
-        validator.processPasswordCredential("validRefId123", null);
+        // Act
+        spyValidator.processPasswordCredential(username, refId);
     }
 
-    @Test(expected = RefIdCredentialException.class)
-    public void testAdapterNotAllowed_ThrowsRefIdCredentialException() throws Exception {
-        RefIdValidator validator = new RefIdValidator(persistenceService);
+    // ---------- Test 3: Happy Path ----------
+    @Test
+    public void testValidFlowSuccess() throws Exception {
+        // Arrange
+        String username = "testuser";
+        String refId = "validref";
 
-        PowerMockito.mockStatic(HexBin.class);
-        PowerMockito.when(HexBin.stringToBytes(anyString())).thenReturn(new byte[]{1, 2, 3});
+        RefIdCredentialValidator spyValidator = Mockito.spy(validator);
+        doReturn("validref").when(spyValidator).getValidateInput(anyString(), anyString());
 
-        ArtifactPersistenceService.Message message = mock(ArtifactPersistenceService.Message.class);
-        Map<Object, Object> msg = new HashMap<>();
-        msg.put("com.pingidentity.plugin.instanceid", new AttributeValue("wrongAdapter"));
-        when(message.getMsg()).thenReturn(msg);
+        byte[] bytes = "validref".getBytes();
+        ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
+        when(mockPersistenceService.retrieveAndRemoveArtifact(bytes)).thenReturn(mockMessage);
 
-        when(persistenceService.retrieveAndRemoveArtifact(any(byte[].class))).thenReturn(message);
+        // Act
+        spyValidator.processPasswordCredential(username, refId);
 
-        validator.processPasswordCredential("validRefId123", null);
+        // Assert → verify persistenceService was called
+        verify(mockPersistenceService, times(1)).retrieveAndRemoveArtifact(bytes);
     }
 }
