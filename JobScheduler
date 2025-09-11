@@ -1,18 +1,23 @@
-@Test
-public void testValidFlowSuccess() throws Exception {
-    String username = "testuser";
-    String refId = "validref";
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
-    // Spy on instance methods only
-    RefIdCredentialValidator spyValidator = Mockito.spy(refIdValidator);
+public class ADTimeConverter {
+    public static void main(String[] args) {
+        long fileTime = 134015544055726467L;
 
-    ArtifactPersistenceService.Message mockMessage = mock(ArtifactPersistenceService.Message.class);
-    when(mockPersistenceService.retrieveAndRemoveArtifact(any(byte[].class)))
-        .thenReturn(mockMessage);
+        // Windows epoch starts at 1601-01-01, Unix epoch at 1970-01-01
+        long windowsToUnixEpochDiff = 116444736000000000L;
 
-    // Act - the real static method will be called
-    spyValidator.processPasswordCredential(username, refId);
+        // Convert to milliseconds
+        long millis = (fileTime - windowsToUnixEpochDiff) / 10000;
 
-    // Assert
-    verify(mockPersistenceService, times(1)).retrieveAndRemoveArtifact(any(byte[].class));
+        // Format to desired style
+        Instant instant = Instant.ofEpochMilli(millis);
+        String formatted = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss")
+                                            .withZone(ZoneId.systemDefault())
+                                            .format(instant);
+
+        System.out.println("Converted Time: " + formatted);
+    }
 }
