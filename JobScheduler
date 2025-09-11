@@ -4,21 +4,27 @@ import java.time.format.DateTimeFormatter;
 
 public class ADTimeConverter {
     public static void main(String[] args) {
-        String timestampStr = "134015544055726467"; // your AD value
-        long fileTime = Long.parseLong(timestampStr);
+        try {
+            String timestampStr = "134015544055726467"; // your AD lastLogonTimeStamp
+            timestampStr = timestampStr.trim(); // clean whitespace
 
-        // Windows epoch (1601-01-01) to Unix epoch (1970-01-01) difference
-        long windowsToUnixEpochDiff = 116444736000000000L;
+            long fileTime = Long.parseLong(timestampStr);
 
-        // Convert to milliseconds
-        long millis = (fileTime - windowsToUnixEpochDiff) / 10000;
+            // Windows epoch (1601-01-01) to Unix epoch (1970-01-01)
+            long windowsToUnixEpochDiff = 116444736000000000L;
 
-        // Format the output
-        Instant instant = Instant.ofEpochMilli(millis);
-        String formatted = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss")
-                                            .withZone(ZoneId.systemDefault())
-                                            .format(instant);
+            // Convert to milliseconds
+            long millis = (fileTime - windowsToUnixEpochDiff) / 10000;
 
-        System.out.println("Converted Time: " + formatted);
+            // Format to system timezone
+            Instant instant = Instant.ofEpochMilli(millis);
+            String formatted = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss")
+                                                .withZone(ZoneId.systemDefault())
+                                                .format(instant);
+
+            System.out.println("Converted Time: " + formatted);
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid timestamp string! Value must be numeric.");
+        }
     }
 }
