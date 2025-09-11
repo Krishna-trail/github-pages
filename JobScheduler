@@ -4,15 +4,16 @@ import java.time.format.DateTimeFormatter;
 
 public class ADTimeConverter {
     public static void main(String[] args) {
-        long fileTime = 134015544055726467L;
+        String timestampStr = "134015544055726467"; // your AD value
+        long fileTime = Long.parseLong(timestampStr);
 
-        // Windows epoch starts at 1601-01-01, Unix epoch at 1970-01-01
+        // Windows epoch (1601-01-01) to Unix epoch (1970-01-01) difference
         long windowsToUnixEpochDiff = 116444736000000000L;
 
         // Convert to milliseconds
         long millis = (fileTime - windowsToUnixEpochDiff) / 10000;
 
-        // Format to desired style
+        // Format the output
         Instant instant = Instant.ofEpochMilli(millis);
         String formatted = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss")
                                             .withZone(ZoneId.systemDefault())
