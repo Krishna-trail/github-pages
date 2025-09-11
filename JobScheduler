@@ -5,22 +5,21 @@ import java.time.format.DateTimeFormatter;
 
 public class ADTimeConverter {
     public static void main(String[] args) {
-        // Example AD lastLogonTimestamp (replace with yours)
-        String adTimestampStr = "133622275440000000";  // string from AD
+        String adTimestampStr = "134015544055726467"; // your AD timestamp
         long adTimestamp = Long.parseLong(adTimestampStr);
 
         // Convert Windows FILETIME → Unix epoch millis
         long unixMillis = (adTimestamp / 10000L) - 11644473600000L;
 
-        // Convert to LocalDateTime based on system timezone
+        // Convert to LocalDateTime in system timezone
         LocalDateTime dateTime = Instant.ofEpochMilli(unixMillis)
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
 
-        // Format output
+        // Format the output
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss");
         String formatted = dateTime.format(formatter);
 
-        System.out.println(formatted); // Sep 11, 2025 17:32:24
+        System.out.println(formatted);
     }
 }
