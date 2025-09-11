@@ -1,25 +1,23 @@
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class ADTimeConverter {
     public static void main(String[] args) {
-        String adTimestampStr = "134015544055726467"; // your AD timestamp
+        String adTimestampStr = "134015544055726467"; // your dynamic AD value
         long adTimestamp = Long.parseLong(adTimestampStr);
 
-        // Convert Windows FILETIME → Unix epoch millis
-        long unixMillis = (adTimestamp / 10000L) - 11644473600000L;
+        // Windows epoch (1601-01-01) to Unix epoch (1970-01-01) difference in 100-nanoseconds
+        long WINDOWS_TO_UNIX_EPOCH_DIFF = 116444736000000000L;
 
-        // Convert to LocalDateTime in system timezone
-        LocalDateTime dateTime = Instant.ofEpochMilli(unixMillis)
-                .atZone(ZoneId.systemDefault())
-                .toLocalDateTime();
+        // Convert to milliseconds
+        long millis = (adTimestamp - WINDOWS_TO_UNIX_EPOCH_DIFF) / 10000;
 
-        // Format the output
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss");
-        String formatted = dateTime.format(formatter);
+        // Adjust for local timezone
+        Date date = new Date(millis);
 
-        System.out.println(formatted);
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getDefault()); // use system timezone
+        System.out.println("Converted Time: " + sdf.format(date));
     }
 }
