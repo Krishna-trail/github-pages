@@ -1,14 +1,23 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Simple Form</title>
-</head>
-<body>
-    <h2>Enter Your Name</h2>
-    <form action="MyServlet" method="post">
-        <input type="text" name="username" placeholder="Enter name" required />
-        <input type="submit" value="Submit" />
-    </form>
-</body>
-</html>
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet("/MyServlet")
+public class MyServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String username = request.getParameter("username");
+
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+        out.println("<h3>Hello, " + username + "!</h3>");
+    }
+}
