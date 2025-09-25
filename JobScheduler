@@ -1,23 +1,14 @@
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
-public class ADTimeConverter {
-    public static void main(String[] args) {
-        String adTimestampStr = "134015544055726467"; // your dynamic AD value
-        long adTimestamp = Long.parseLong(adTimestampStr);
-
-        // Windows epoch (1601-01-01) to Unix epoch (1970-01-01) difference in 100-nanoseconds
-        long WINDOWS_TO_UNIX_EPOCH_DIFF = 116444736000000000L;
-
-        // Convert to milliseconds
-        long millis = (adTimestamp - WINDOWS_TO_UNIX_EPOCH_DIFF) / 10000;
-
-        // Adjust for local timezone
-        Date date = new Date(millis);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm:ss");
-        sdf.setTimeZone(TimeZone.getDefault()); // use system timezone
-        System.out.println("Converted Time: " + sdf.format(date));
-    }
-}
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Form</title>
+</head>
+<body>
+    <h2>Enter Your Name</h2>
+    <form action="MyServlet" method="post">
+        <input type="text" name="username" placeholder="Enter name" required />
+        <input type="submit" value="Submit" />
+    </form>
+</body>
+</html>
