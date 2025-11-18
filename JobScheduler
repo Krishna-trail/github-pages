@@ -1,34 +1,18 @@
-package com.example.config;
+<script>
+function goToReceiver() {
 
-import java.io.*;
-import java.util.Properties;
-import javax.servlet.ServletContext;
+    // Read the cookie value from browser
+    const cookies = document.cookie;  
+    console.log("ALL COOKIES:", cookies);
 
-public class AppConfig {
+    // (Optional) extract only destURL cookie
+    const destCookie = cookies
+        .split("; ")
+        .find(row => row.startsWith("destURL="));
 
-    private static String privateKey;
+    console.log("destURL cookie:", destCookie);
 
-    // static block ensures it's loaded once
-    public static void load(ServletContext context) {
-        if (privateKey != null) return; // already loaded once
-
-        try (InputStream is = context.getResourceAsStream("/WEB-INF/privatekey.txt")) {
-            if (is == null) {
-                throw new FileNotFoundException("privatekey.txt not found under /WEB-INF/");
-            }
-
-            Properties props = new Properties();
-            props.load(is);
-            privateKey = props.getProperty("KEY");
-
-            System.out.println("Private key loaded: " + privateKey);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static String getPrivateKey() {
-        return privateKey;
-    }
+    // Now redirect
+    window.location.href = "https://server2211.intranet.barcapint.com/receiver.jsp";
 }
+</script>
