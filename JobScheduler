@@ -1,72 +1,88 @@
-<div id="qrBox" style="width:220px;height:220px;"></div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Custom QR Code with Styled Corners</title>
+</head>
+<body>
+<canvas id="qrCanvas"></canvas>
+<img id="logo" src="logo.png" style="display:none;"/>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-// STEP 1 – Generate normal QR (black dots)
-new QRCode("qrBox", {
-    text: "https://your-url-here.com",
-    width: 220,
-    height: 220,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-});
+function drawStyledQRCode(text) {
+    const qr = qrcode(4, 'M'); // Version 4, Medium error correction
+    qr.addData(text);
+    qr.make();
 
-// STEP 2 – Modify QR (blue corners + center circle)
-setTimeout(() => {
-    const qrDiv = document.getElementById("qrBox");
-    const canvas = qrDiv.getElementsByTagName("canvas")[0];
-    const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById('qrCanvas');
+    const ctx = canvas.getContext('2d');
 
-    const size = canvas.width;
+    const moduleCount = qr.getModuleCount();
+    const size = 300; // canvas size
+    const moduleSize = size / moduleCount;
+    canvas.width = size;
+    canvas.height = size;
 
-    // ---------- DRAW BARCLAYS BLUE CORNER SQUARES ----------
-    const cornerColor = "#00A0E4"; // Barclays blue
-    const cornerSize = size * 0.22; // finder pattern size
+    // Draw white background
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, size, size);
 
-    function drawCorner(x, y) {
-        // Outer square
-        ctx.strokeStyle = cornerColor;
-        ctx.lineWidth = 6;
-        ctx.strokeRect(x, y, cornerSize, cornerSize);
+    // Draw QR modules except corner squares
+    for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+                const inTopLeftCorner = row < 7 && col < 7;
+                const inTopRightCorner = row < 7 && col >= moduleCount - 7;
+                const inBottomLeftCorner = row >= moduleCount - 7 && col < 7;
 
-        // Inner square
-        const innerMargin = 10;
-        ctx.strokeRect(
-            x + innerMargin, 
-            y + innerMargin, 
-            cornerSize - innerMargin * 2, 
-            cornerSize - innerMargin * 2
-        );
+                if (!inTopLeftCorner && !inTopRightCorner && !inBottomLeftCorner) {
+                    ctx.fillStyle = "#000000"; // black QR modules
+                    ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                }
+            }
+        }
     }
 
-    // Top-left
-    drawCorner(0, 0);
-    // Top-right
-    drawCorner(size - cornerSize, 0);
-    // Bottom-left
-    drawCorner(0, size - cornerSize);
+    // Function to draw styled corner (nested squares)
+    function drawCorner(x, y) {
+        const outerSize = 7 * moduleSize;
+        const innerSize = 3 * moduleSize;
+        const offset = moduleSize * 2;
 
-    // ---------- DRAW CENTER CIRCLE FOR LOGO ----------
-    const circleSize = size * 0.35;
-    const radius = circleSize / 2;
+        // Outer square
+        ctx.fillStyle = "#0000FF";
+        ctx.fillRect(x, y, outerSize, outerSize);
 
-    const cx = size / 2;
-    const cy = size / 2;
+        // White inner square
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(x + moduleSize, y + moduleSize, outerSize - 2 * moduleSize, outerSize - 2 * moduleSize);
 
-    // white fill
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
+        // Inner blue square
+        ctx.fillStyle = "#0000FF";
+        ctx.fillRect(x + offset, y + offset, innerSize, innerSize);
+    }
 
-    // blue border
-    ctx.strokeStyle = "#00A0E4";
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.stroke();
+    // Draw three corners
+    drawCorner(0, 0); // top-left
+    drawCorner(size - 7 * moduleSize, 0); // top-right
+    drawCorner(0, size - 7 * moduleSize); // bottom-left
 
-}, 500);
+    // Draw white center for logo
+    const logo = document.getElementById('logo');
+    logo.onload = function() {
+        const logoSize = size * 0.25; // logo occupies 25% of QR
+        const center = size / 2;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(center - logoSize/2, center - logoSize/2, logoSize, logoSize);
+
+        // Draw logo
+        ctx.drawImage(logo, center - logoSize/2, center - logoSize/2, logoSize, logoSize);
+    }
+    logo.src = "logo.png"; // your logo path
+}
+
+// Generate QR
+drawStyledQRCode("https://your-url.com");
 </script>
+</body>
+</html>
