@@ -3,39 +3,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
-// 1️⃣ Generate QR Code
-new QRCode("qrBox", {
+// 1️⃣ Force QRCode to output CANVAS
+var qr = new QRCode(document.getElementById("qrBox"), {
     text: "https://your-url-here.com",
     width: 220,
     height: 220,
-    correctLevel: QRCode.CorrectLevel.H
+    correctLevel: QRCode.CorrectLevel.H,
+    render: "canvas"   // 👈 important — force canvas render
 });
 
-// 2️⃣ Draw circular placeholder with Barclays blue border
+// 2️⃣ Wait until QR is drawn, then draw the circle
 setTimeout(() => {
-    const qrDiv = document.getElementById("qrBox");
-    const canvas = qrDiv.getElementsByTagName("canvas")[0];
-    const ctx = canvas.getContext("2d");
 
+    const canvas = document.querySelector("#qrBox canvas");
+
+    if (!canvas) {
+        console.error("Canvas not found. QR rendered as IMG. Forcing canvas failed.");
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
     const size = canvas.width;
-    const circleSize = size * 0.35;  // diameter
-    const radius = circleSize / 2;
+
+    const circleDiameter = size * 0.35;
+    const radius = circleDiameter / 2;
 
     const centerX = size / 2;
     const centerY = size / 2;
 
-    // Draw white base circle
+    // White inner circle
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw Barclays blue border
-    ctx.strokeStyle = "#00A0E4";  // Barclays blue
-    ctx.lineWidth = 6;            // border thickness
+    // Barclays Blue border
+    ctx.strokeStyle = "#00A0E4"; 
+    ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     ctx.stroke();
 
-}, 300);
+}, 500);
 </script>
