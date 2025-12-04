@@ -2,34 +2,71 @@
 <html>
 <head>
     <title>QR Code Page</title>
+
+    <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        #qrcode {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+        #logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;   /* adjust for your logo size */
+            height: 50px;
+            transform: translate(-50%, -50%);
+            border-radius: 10px;  /* optional rounded corners */
+        }
+    </style>
 </head>
 
 <body>
-    <h2>Your QR Code</h2>
+    <h3>QR Code with Company Logo</h3>
 
     <div id="qrcode"></div>
 
+    <!-- Place logo above the QR canvas -->
+    <img id="logo" src="your-logo.png" />
+
     <script>
-        // Values passed from back-end
+        // Parameters from Adapter
         var userId = "${userId}";
         var refId = "${refId}";
+        var txn = "${txn}";
         var amount = "${amount}";
 
-        // Construct final URL from params
+        // Build final URL
         var finalUrl = "https://company.com/process?"
-                       + "userId=" + encodeURIComponent(userId)
-                       + "&refId=" + encodeURIComponent(refId)
-                       + "&amount=" + encodeURIComponent(amount);
+            + "userId=" + encodeURIComponent(userId)
+            + "&refId=" + encodeURIComponent(refId)
+            + "&txn=" + encodeURIComponent(txn)
+            + "&amount=" + encodeURIComponent(amount);
 
-        console.log("Generated URL: " + finalUrl);
+        console.log("QR Code URL: " + finalUrl);
 
         // Generate QR Code
-        new QRCode(document.getElementById("qrcode"), {
+        var qrDiv = document.getElementById("qrcode");
+
+        var qr = new QRCode(qrDiv, {
             text: finalUrl,
             width: 200,
-            height: 200
+            height: 200,
+            correctLevel: QRCode.CorrectLevel.H // High error correction for logo
         });
+
+        // Wait for QR to be created, then bring logo on top
+        setTimeout(() => {
+            let canvas = qrDiv.querySelector("canvas");
+            let logo = document.getElementById("logo");
+
+            // Resize logo dynamically (optional)
+            logo.style.width = (canvas.width * 0.25) + "px";
+            logo.style.height = (canvas.height * 0.25) + "px";
+        }, 500);
     </script>
 
 </body>
