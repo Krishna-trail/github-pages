@@ -3,31 +3,41 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
-// 1️⃣ Force QRCode to output CANVAS
-var qr = new QRCode(document.getElementById("qrBox"), {
+// 1️⃣ Generate QR (will create IMG)
+new QRCode("qrBox", {
     text: "https://your-url-here.com",
     width: 220,
     height: 220,
-    correctLevel: QRCode.CorrectLevel.H,
-    render: "canvas"   // 👈 important — force canvas render
+    correctLevel: QRCode.CorrectLevel.H
 });
 
-// 2️⃣ Wait until QR is drawn, then draw the circle
+// 2️⃣ Convert the QR IMG → Canvas and draw your circle
 setTimeout(() => {
+    const qrDiv = document.getElementById("qrBox");
+    const img = qrDiv.querySelector("img");
 
-    const canvas = document.querySelector("#qrBox canvas");
-
-    if (!canvas) {
-        console.error("Canvas not found. QR rendered as IMG. Forcing canvas failed.");
+    if (!img) {
+        console.error("QR image not found");
         return;
     }
 
+    // Create canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
     const ctx = canvas.getContext("2d");
+
+    // Draw QR image onto canvas
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Now remove the IMG and insert the canvas
+    qrDiv.innerHTML = "";
+    qrDiv.appendChild(canvas);
+
+    // 3️⃣ Draw circular placeholder
     const size = canvas.width;
-
-    const circleDiameter = size * 0.35;
-    const radius = circleDiameter / 2;
-
+    const circleSize = size * 0.35;
+    const radius = circleSize / 2;
     const centerX = size / 2;
     const centerY = size / 2;
 
@@ -37,8 +47,8 @@ setTimeout(() => {
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Barclays Blue border
-    ctx.strokeStyle = "#00A0E4"; 
+    // Barclays blue border
+    ctx.strokeStyle = "#00A0E4";
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
