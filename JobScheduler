@@ -1,58 +1,8 @@
-<div id="qrBox" style="width:220px;height:220px;"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-<script>
-// 1️⃣ Generate QR (will create IMG)
 new QRCode("qrBox", {
     text: "https://your-url-here.com",
     width: 220,
     height: 220,
+    colorDark: "#00A0E4",     // Barclays blue
+    colorLight: "#ffffff",    // white background
     correctLevel: QRCode.CorrectLevel.H
 });
-
-// 2️⃣ Convert the QR IMG → Canvas and draw your circle
-setTimeout(() => {
-    const qrDiv = document.getElementById("qrBox");
-    const img = qrDiv.querySelector("img");
-
-    if (!img) {
-        console.error("QR image not found");
-        return;
-    }
-
-    // Create canvas
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-
-    // Draw QR image onto canvas
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    // Now remove the IMG and insert the canvas
-    qrDiv.innerHTML = "";
-    qrDiv.appendChild(canvas);
-
-    // 3️⃣ Draw circular placeholder
-    const size = canvas.width;
-    const circleSize = size * 0.35;
-    const radius = circleSize / 2;
-    const centerX = size / 2;
-    const centerY = size / 2;
-
-    // White inner circle
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Barclays blue border
-    ctx.strokeStyle = "#00A0E4";
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.stroke();
-
-}, 500);
-</script>
