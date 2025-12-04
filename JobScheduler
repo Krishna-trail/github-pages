@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Barclays-Style QR Code</title>
+  <title>QR Code with Center White Circle</title>
 </head>
 <body>
 <canvas id="qrCanvas"></canvas>
@@ -9,7 +9,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-function drawBarclaysStyleQRCode(url) {
+function drawQRCodeWithCenterCircle(url) {
     const qr = qrcode(4, 'H'); // High error correction
     qr.addData(url);
     qr.make();
@@ -23,11 +23,11 @@ function drawBarclaysStyleQRCode(url) {
     canvas.width = size;
     canvas.height = size;
 
-    // Fill background white
+    // White background
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, size, size);
 
-    // Draw QR data modules (black squares)
+    // Draw QR modules
     for (let row = 0; row < moduleCount; row++) {
         for (let col = 0; col < moduleCount; col++) {
             if (qr.isDark(row, col)) {
@@ -35,53 +35,68 @@ function drawBarclaysStyleQRCode(url) {
                     (row < 7 && col < 7) || 
                     (row < 7 && col >= moduleCount - 7) ||
                     (row >= moduleCount - 7 && col < 7);
+
+                // Skip modules inside center circle
+                const center = moduleCount / 2;
+                const radius = moduleCount * 0.125; // radius of white circle in modules
+                if (Math.sqrt((col - center + 0.5)**2 + (row - center + 0.5)**2) < radius) {
+                    continue;
+                }
+
                 if (!inCorner) {
-                    ctx.fillStyle = "#000000"; // Black modules
+                    ctx.fillStyle = "#000000"; // black modules
                     ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
                 }
             }
         }
     }
 
-    // Function to draw Starbucks-style corners with custom color
+    // Draw corner squares (nested style)
     function drawCorner(x, y, color) {
         const outer = 7 * moduleSize;
         const inner = 3 * moduleSize;
         const offset = 2 * moduleSize;
 
-        ctx.fillStyle = color; // Barclays blue
-        ctx.fillRect(x, y, outer, outer); // Outer square
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, outer, outer); // outer square
 
-        ctx.fillStyle = "#FFFFFF"; // Middle white
+        ctx.fillStyle = "#FFFFFF"; // middle white
         ctx.fillRect(x + moduleSize, y + moduleSize, outer - 2*moduleSize, outer - 2*moduleSize);
 
-        ctx.fillStyle = color; // Inner square
+        ctx.fillStyle = color; // inner square
         ctx.fillRect(x + offset, y + offset, inner, inner);
     }
 
-    // Draw three corners
-    const barclaysBlue = "#0061BA"; // Barclays blue
+    const barclaysBlue = "#0061BA";
     drawCorner(0, 0, barclaysBlue); // top-left
     drawCorner(size - 7*moduleSize, 0, barclaysBlue); // top-right
     drawCorner(0, size - 7*moduleSize, barclaysBlue); // bottom-left
 
-    // Draw white center for logo
+    // Draw white circle for logo
     const logo = document.getElementById('logo');
     logo.onload = function() {
-        const logoSize = size * 0.25;
         const center = size / 2;
+        const logoRadius = size * 0.125; // 25% of QR code diameter
 
-        ctx.fillStyle = "#FFFFFF"; // white block
-        ctx.fillRect(center - logoSize/2, center - logoSize/2, logoSize, logoSize);
+        // White circle
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.arc(center, center, logoRadius, 0, 2 * Math.PI);
+        ctx.fill();
 
-        // Draw logo image
-        ctx.drawImage(logo, center - logoSize/2, center - logoSize/2, logoSize, logoSize);
+        // Draw logo inside circle
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(center, center, logoRadius, 0, 2 * Math.PI);
+        ctx.clip();
+        ctx.drawImage(logo, center - logoRadius, center - logoRadius, logoRadius*2, logoRadius*2);
+        ctx.restore();
     }
     logo.src = "logo.png"; // your logo path
 }
 
 // Generate QR code
-drawBarclaysStyleQRCode("https://your-url.com");
+drawQRCodeWithCenterCircle("https://your-url.com");
 </script>
 </body>
 </html>
