@@ -1,18 +1,36 @@
-<script>
-function goToReceiver() {
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
 
-    // Read the cookie value from browser
-    const cookies = document.cookie;  
-    console.log("ALL COOKIES:", cookies);
+<body>
+    <h2>Your QR Code</h2>
 
-    // (Optional) extract only destURL cookie
-    const destCookie = cookies
-        .split("; ")
-        .find(row => row.startsWith("destURL="));
+    <div id="qrcode"></div>
 
-    console.log("destURL cookie:", destCookie);
+    <script>
+        // Values passed from back-end
+        var userId = "${userId}";
+        var refId = "${refId}";
+        var amount = "${amount}";
 
-    // Now redirect
-    window.location.href = "https://server2211.intranet.barcapint.com/receiver.jsp";
-}
-</script>
+        // Construct final URL from params
+        var finalUrl = "https://company.com/process?"
+                       + "userId=" + encodeURIComponent(userId)
+                       + "&refId=" + encodeURIComponent(refId)
+                       + "&amount=" + encodeURIComponent(amount);
+
+        console.log("Generated URL: " + finalUrl);
+
+        // Generate QR Code
+        new QRCode(document.getElementById("qrcode"), {
+            text: finalUrl,
+            width: 200,
+            height: 200
+        });
+    </script>
+
+</body>
+</html>
