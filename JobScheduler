@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Custom QR Code with Styled Corners</title>
+  <title>Barclays-Style QR Code</title>
 </head>
 <body>
 <canvas id="qrCanvas"></canvas>
@@ -9,80 +9,79 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-function drawStyledQRCode(text) {
-    const qr = qrcode(4, 'M'); // Version 4, Medium error correction
-    qr.addData(text);
+function drawBarclaysStyleQRCode(url) {
+    const qr = qrcode(4, 'H'); // High error correction
+    qr.addData(url);
     qr.make();
 
     const canvas = document.getElementById('qrCanvas');
     const ctx = canvas.getContext('2d');
 
     const moduleCount = qr.getModuleCount();
-    const size = 300; // canvas size
+    const size = 300;
     const moduleSize = size / moduleCount;
     canvas.width = size;
     canvas.height = size;
 
-    // Draw white background
+    // Fill background white
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, size, size);
 
-    // Draw QR modules except corner squares
+    // Draw QR data modules (black squares)
     for (let row = 0; row < moduleCount; row++) {
         for (let col = 0; col < moduleCount; col++) {
             if (qr.isDark(row, col)) {
-                const inTopLeftCorner = row < 7 && col < 7;
-                const inTopRightCorner = row < 7 && col >= moduleCount - 7;
-                const inBottomLeftCorner = row >= moduleCount - 7 && col < 7;
-
-                if (!inTopLeftCorner && !inTopRightCorner && !inBottomLeftCorner) {
-                    ctx.fillStyle = "#000000"; // black QR modules
+                const inCorner = 
+                    (row < 7 && col < 7) || 
+                    (row < 7 && col >= moduleCount - 7) ||
+                    (row >= moduleCount - 7 && col < 7);
+                if (!inCorner) {
+                    ctx.fillStyle = "#000000"; // Black modules
                     ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
                 }
             }
         }
     }
 
-    // Function to draw styled corner (nested squares)
-    function drawCorner(x, y) {
-        const outerSize = 7 * moduleSize;
-        const innerSize = 3 * moduleSize;
-        const offset = moduleSize * 2;
+    // Function to draw Starbucks-style corners with custom color
+    function drawCorner(x, y, color) {
+        const outer = 7 * moduleSize;
+        const inner = 3 * moduleSize;
+        const offset = 2 * moduleSize;
 
-        // Outer square
-        ctx.fillStyle = "#0000FF";
-        ctx.fillRect(x, y, outerSize, outerSize);
+        ctx.fillStyle = color; // Barclays blue
+        ctx.fillRect(x, y, outer, outer); // Outer square
 
-        // White inner square
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(x + moduleSize, y + moduleSize, outerSize - 2 * moduleSize, outerSize - 2 * moduleSize);
+        ctx.fillStyle = "#FFFFFF"; // Middle white
+        ctx.fillRect(x + moduleSize, y + moduleSize, outer - 2*moduleSize, outer - 2*moduleSize);
 
-        // Inner blue square
-        ctx.fillStyle = "#0000FF";
-        ctx.fillRect(x + offset, y + offset, innerSize, innerSize);
+        ctx.fillStyle = color; // Inner square
+        ctx.fillRect(x + offset, y + offset, inner, inner);
     }
 
     // Draw three corners
-    drawCorner(0, 0); // top-left
-    drawCorner(size - 7 * moduleSize, 0); // top-right
-    drawCorner(0, size - 7 * moduleSize); // bottom-left
+    const barclaysBlue = "#0061BA"; // Barclays blue
+    drawCorner(0, 0, barclaysBlue); // top-left
+    drawCorner(size - 7*moduleSize, 0, barclaysBlue); // top-right
+    drawCorner(0, size - 7*moduleSize, barclaysBlue); // bottom-left
 
     // Draw white center for logo
     const logo = document.getElementById('logo');
     logo.onload = function() {
-        const logoSize = size * 0.25; // logo occupies 25% of QR
+        const logoSize = size * 0.25;
         const center = size / 2;
-        ctx.fillStyle = "#FFFFFF";
+
+        ctx.fillStyle = "#FFFFFF"; // white block
         ctx.fillRect(center - logoSize/2, center - logoSize/2, logoSize, logoSize);
 
-        // Draw logo
+        // Draw logo image
         ctx.drawImage(logo, center - logoSize/2, center - logoSize/2, logoSize, logoSize);
     }
     logo.src = "logo.png"; // your logo path
 }
 
-// Generate QR
-drawStyledQRCode("https://your-url.com");
+// Generate QR code
+drawBarclaysStyleQRCode("https://your-url.com");
 </script>
 </body>
 </html>
