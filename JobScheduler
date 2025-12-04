@@ -1,8 +1,72 @@
+<div id="qrBox" style="width:220px;height:220px;"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// STEP 1 – Generate normal QR (black dots)
 new QRCode("qrBox", {
     text: "https://your-url-here.com",
     width: 220,
     height: 220,
-    colorDark: "#00A0E4",     // Barclays blue
-    colorLight: "#ffffff",    // white background
+    colorDark: "#000000",
+    colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
 });
+
+// STEP 2 – Modify QR (blue corners + center circle)
+setTimeout(() => {
+    const qrDiv = document.getElementById("qrBox");
+    const canvas = qrDiv.getElementsByTagName("canvas")[0];
+    const ctx = canvas.getContext("2d");
+
+    const size = canvas.width;
+
+    // ---------- DRAW BARCLAYS BLUE CORNER SQUARES ----------
+    const cornerColor = "#00A0E4"; // Barclays blue
+    const cornerSize = size * 0.22; // finder pattern size
+
+    function drawCorner(x, y) {
+        // Outer square
+        ctx.strokeStyle = cornerColor;
+        ctx.lineWidth = 6;
+        ctx.strokeRect(x, y, cornerSize, cornerSize);
+
+        // Inner square
+        const innerMargin = 10;
+        ctx.strokeRect(
+            x + innerMargin, 
+            y + innerMargin, 
+            cornerSize - innerMargin * 2, 
+            cornerSize - innerMargin * 2
+        );
+    }
+
+    // Top-left
+    drawCorner(0, 0);
+    // Top-right
+    drawCorner(size - cornerSize, 0);
+    // Bottom-left
+    drawCorner(0, size - cornerSize);
+
+    // ---------- DRAW CENTER CIRCLE FOR LOGO ----------
+    const circleSize = size * 0.35;
+    const radius = circleSize / 2;
+
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // white fill
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // blue border
+    ctx.strokeStyle = "#00A0E4";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+}, 500);
+</script>
