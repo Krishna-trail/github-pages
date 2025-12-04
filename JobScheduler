@@ -3,34 +3,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
-    // 1️⃣ Generate QR
-    new QRCode("qrBox", {
-        text: "https://your-url-here.com",
-        width: 220,
-        height: 220,
-        correctLevel: QRCode.CorrectLevel.H
-    });
+// 1️⃣ Generate QR Code
+new QRCode("qrBox", {
+    text: "https://your-url-here.com",
+    width: 220,
+    height: 220,
+    correctLevel: QRCode.CorrectLevel.H
+});
 
-    // 2️⃣ Wait for QR to be drawn
-    setTimeout(() => {
-        const qrDiv = document.getElementById("qrBox");
-        const canvas = qrDiv.getElementsByTagName("canvas")[0];  // Always correct
-        const ctx = canvas.getContext("2d");
+// 2️⃣ Draw circular placeholder with Barclays blue border
+setTimeout(() => {
+    const qrDiv = document.getElementById("qrBox");
+    const canvas = qrDiv.getElementsByTagName("canvas")[0];
+    const ctx = canvas.getContext("2d");
 
-        const logo = new Image();
-        logo.src = "barclays-logo.png";  // ⭐ Your logo file
+    const size = canvas.width;
+    const circleSize = size * 0.35;  // diameter
+    const radius = circleSize / 2;
 
-        logo.onload = () => {
-            const size = 60; // Logo size (tweak if needed)
-            const x = (canvas.width - size) / 2;
-            const y = (canvas.height - size) / 2;
+    const centerX = size / 2;
+    const centerY = size / 2;
 
-            // White background – gives "clean rounded badge" effect
-            ctx.fillStyle = "white";
-            ctx.fillRect(x, y, size, size);
+    // Draw white base circle
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
 
-            // Draw logo
-            ctx.drawImage(logo, x, y, size, size);
-        };
-    }, 300);
+    // Draw Barclays blue border
+    ctx.strokeStyle = "#00A0E4";  // Barclays blue
+    ctx.lineWidth = 6;            // border thickness
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+}, 300);
 </script>
