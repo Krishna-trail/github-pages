@@ -1,102 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Logo-First QR Code</title>
-</head>
-<body>
-<canvas id="qrCanvas"></canvas>
-<img id="logo" src="logo.png" style="display:none;"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                             http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script>
-function drawLogoFirstQRCode(url) {
-    const qr = qrcode(4, 'H'); // High error correction
-    qr.addData(url);
-    qr.make();
+    <mime-mapping>
+        <extension>svg</extension>
+        <mime-type>image/svg+xml</mime-type>
+    </mime-mapping>
 
-    const canvas = document.getElementById('qrCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const moduleCount = qr.getModuleCount();
-    const size = 300;
-    canvas.width = size;
-    canvas.height = size;
-
-    // Define center circle for logo (big)
-    const logoRadius = size * 0.2; // 40% of QR diameter
-    const center = size / 2;
-
-    // Compute module size to fit around logo
-    const moduleSize = (size - 2 * logoRadius * 1.1) / moduleCount; // shrink modules slightly
-
-    // Fill background white
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, size, size);
-
-    // Draw QR modules
-    for (let row = 0; row < moduleCount; row++) {
-        for (let col = 0; col < moduleCount; col++) {
-            if (qr.isDark(row, col)) {
-                const inCorner = 
-                    (row < 7 && col < 7) || 
-                    (row < 7 && col >= moduleCount - 7) ||
-                    (row >= moduleCount - 7 && col < 7);
-
-                // Skip modules inside big logo circle
-                const moduleX = col * moduleSize + moduleSize/2;
-                const moduleY = row * moduleSize + moduleSize/2;
-                if (Math.sqrt((moduleX - center)**2 + (moduleY - center)**2) < logoRadius) continue;
-
-                if (!inCorner) {
-                    ctx.fillStyle = "#000000"; // black modules
-                    ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
-                }
-            }
-        }
-    }
-
-    // Draw three corners (nested style, Barclays blue)
-    function drawCorner(x, y, color) {
-        const outer = 7 * moduleSize;
-        const inner = 3 * moduleSize;
-        const offset = 2 * moduleSize;
-
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, outer, outer);
-
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(x + moduleSize, y + moduleSize, outer - 2*moduleSize, outer - 2*moduleSize);
-
-        ctx.fillStyle = color;
-        ctx.fillRect(x + offset, y + offset, inner, inner);
-    }
-
-    const barclaysBlue = "#0061BA";
-    drawCorner(0, 0, barclaysBlue);
-    drawCorner(size - 7*moduleSize, 0, barclaysBlue);
-    drawCorner(0, size - 7*moduleSize, barclaysBlue);
-
-    // Draw white circle for logo
-    const logo = document.getElementById('logo');
-    logo.onload = function() {
-        ctx.fillStyle = "#FFFFFF";
-        ctx.beginPath();
-        ctx.arc(center, center, logoRadius, 0, 2*Math.PI);
-        ctx.fill();
-
-        // Draw logo clipped in circle
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(center, center, logoRadius, 0, 2*Math.PI);
-        ctx.clip();
-        ctx.drawImage(logo, center - logoRadius, center - logoRadius, logoRadius*2, logoRadius*2);
-        ctx.restore();
-    }
-    logo.src = "logo.png";
-}
-
-// Generate QR code
-drawLogoFirstQRCode("https://your-url.com");
-</script>
-</body>
-</html>
+</web-app>
