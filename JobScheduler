@@ -1,13 +1,68 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-                             http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
-         version="3.1">
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Processing</title>
+</head>
+<body>
 
-    <mime-mapping>
-        <extension>svg</extension>
-        <mime-type>image/svg+xml</mime-type>
-    </mime-mapping>
+<p>Redirecting in <span id="timer">60</span> seconds…</p>
 
-</web-app>
+<script>
+  let timeLeft = 60;
+
+  const timer = setInterval(() => {
+    document.getElementById("timer").innerText = timeLeft;
+    timeLeft--;
+
+    if (timeLeft < 0) {
+      clearInterval(timer);
+
+      // PingFederate-safe redirect
+      window.location.replace("page2.html?baseUrl=https://example.com");
+    }
+  }, 1000);
+</script>
+
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Completing</title>
+</head>
+<body>
+
+<p>Completing session… closing in <span id="timer">60</span> seconds</p>
+
+<script>
+  // Read baseUrl if needed
+  const params = new URLSearchParams(window.location.search);
+  const baseUrl = params.get("baseUrl");
+
+  let timeLeft = 60;
+
+  const timer = setInterval(() => {
+    document.getElementById("timer").innerText = timeLeft;
+    timeLeft--;
+
+    if (timeLeft < 0) {
+      clearInterval(timer);
+
+      // Attempt to close
+      window.close();
+
+      // Fallback if close is blocked
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <p>Session completed.</p>
+          <p>You may safely close this tab.</p>
+        `;
+      }, 500);
+    }
+  }, 1000);
+</script>
+
+</body>
+</html>
