@@ -1,68 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Processing</title>
-</head>
-<body>
+HttpSession session = request.getSession();
 
-<p>Redirecting in <span id="timer">60</span> seconds…</p>
+Long storedRefTime = (Long) session.getAttribute("storedRefTime");
 
-<script>
-  let timeLeft = 60;
+long expiryDuration = 90 * 1000; // 90 seconds
+long currentTime = System.currentTimeMillis();
 
-  const timer = setInterval(() => {
-    document.getElementById("timer").innerText = timeLeft;
-    timeLeft--;
+long remainingSeconds;
 
-    if (timeLeft < 0) {
-      clearInterval(timer);
+if (storedRefTime == null) {
+    // First time
+    storedRefTime = currentTime;
+    session.setAttribute("storedRefTime", storedRefTime);
+    remainingSeconds = 90;
+} else {
+    long elapsedMillis = currentTime - storedRefTime;
+    long remainingMillis = expiryDuration - elapsedMillis;
 
-      // PingFederate-safe redirect
-      window.location.replace("page2.html?baseUrl=https://example.com");
+    if (remainingMillis <= 0) {
+        // Expired → reset
+        storedRefTime = currentTime;
+        session.setAttribute("storedRefTime", storedRefTime);
+        remainingSeconds = 90;
+    } else {
+        remainingSeconds = remainingMillis / 1000;
     }
-  }, 1000);
-</script>
+}
 
-</body>
-</html>
-
-
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Completing</title>
-</head>
-<body>
-
-<p>Completing session… closing in <span id="timer">60</span> seconds</p>
-
-<script>
-  // Read baseUrl if needed
-  const params = new URLSearchParams(window.location.search);
-  const baseUrl = params.get("baseUrl");
-
-  let timeLeft = 60;
-
-  const timer = setInterval(() => {
-    document.getElementById("timer").innerText = timeLeft;
-    timeLeft--;
-
-    if (timeLeft < 0) {
-      clearInterval(timer);
-
-      // Attempt to close
-      window.close();
-
-      // Fallback if close is blocked
-      setTimeout(() => {
-        document.body.innerHTML = `
-          <p>Session completed.</p>
-          <p>You may safely close this tab.</p>
-        `;
-      }, 500);
-    }
-  }, 1000);
-</script>
-
-</body>
-</html>
+request.setAttribute("resumeTime", remainingSeconds);
