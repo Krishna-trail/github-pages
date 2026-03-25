@@ -1,24 +1,17 @@
-<div class="container">
+.wrapper {
+    display: flex;
+    justify-content: center;   /* centers both boxes as a group */
+    align-items: center;
+    gap: 40px;                 /* space between left & right */
+    margin-top: 100px;
+}
 
-    <div class="instruction">
-        2. Once you have completed this journey in your mobile,
-        click the 'All Done' button within 5 minutes
-    </div>
-
-    <div class="timer-box">
-        <div class="time">
-            <span id="minutes">05</span>
-            <span class="colon">:</span>
-            <span id="seconds">00</span>
-        </div>
-        <div class="labels">
-            <span>MINUTES</span>
-            <span>SECONDS</span>
-        </div>
-    </div>
-
-    <div class="placeholder">Placeholder copy...</div>
-
-    <button class="done-btn">All Done</button>
-
-</div>
+.box {
+    width: 250px;
+    height: 150px;
+    background: #eaeaea;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
