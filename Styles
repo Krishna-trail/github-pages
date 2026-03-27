@@ -1,27 +1,69 @@
-for (int row = 1; row <= sheet1.getLastRowNum(); row++) {
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-    Row r = sheet1.getRow(row);
-    if (r == null) continue;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-    Cell adCell = r.getCell(adColIndex);
-    if (adCell == null) continue;
+public class MergeExcel {
 
-    String adValue = getCellValue(adCell);
+    public static void main(String[] args) throws Exception {
 
-    Cell sdnCell = r.getCell(sdnColIndex);
-    Cell idnCell = r.getCell(sdnColIndex + 1);
+        // File paths
+        FileInputStream fis1 = new FileInputStream("excel1.xlsx");
+        FileInputStream fis2 = new FileInputStream("excel2.xlsx");
 
-    if (sdnCell == null) sdnCell = r.createCell(sdnColIndex);
-    if (idnCell == null) idnCell = r.createCell(sdnColIndex + 1);
+        Workbook wb1 = new XSSFWorkbook(fis1);
+        Workbook wb2 = new XSSFWorkbook(fis2);
 
-    if (e2DataMap.containsKey(adValue)) {
+        Sheet sheet1 = wb1.getSheetAt(0);
+        Sheet sheet2 = wb2.getSheetAt(0);
 
-        String[] e2Cols = e2DataMap.get(adValue);
+        // 🔹 Step 1: Store Excel2 data in Map
+        Map<String, String[]> map = new HashMap<>();
 
-        idnCell.setCellValue(e2Cols[0]); // IDN
-        sdnCell.setCellValue(e2Cols[1]); // SDN
+        for (int i = 1; i <= sheet2.getLastRowNum(); i++) {
+            Row row = sheet2.getRow(i);
+            if (row == null) continue;
 
-    } else {
-        log.info("No match for AD: " + adValue);
+            String sa = row.getCell(0).getStringCellValue();
+            String idn = row.getCell(1).getStringCellValue();
+            String sdn = row.getCell(2).getStringCellValue();
+
+            map.put(sa, new String[]{idn, sdn});
+        }
+
+        // 🔹 Step 2: Add new columns in Excel1 header
+        Row header = sheet1.getRow(0);
+        header.createCell(1).setCellValue("IDN");
+        header.createCell(2).setCellValue("SDN");
+
+        // 🔹 Step 3: Compare and copy values
+        for (int i = 1; i <= sheet1.getLastRowNum(); i++) {
+            Row row = sheet1.getRow(i);
+            if (row == null) continue;
+
+            String sa = row.getCell(0).getStringCellValue();
+
+            if (map.containsKey(sa)) {
+                String[] values = map.get(sa);
+
+                row.createCell(1).setCellValue(values[0]); // IDN
+                row.createCell(2).setCellValue(values[1]); // SDN
+            }
+        }
+
+        // 🔹 Step 4: Write back to same Excel1
+        FileOutputStream fos = new FileOutputStream("excel1_updated.xlsx");
+        wb1.write(fos);
+
+        wb1.close();
+        wb2.close();
+        fis1.close();
+        fis2.close();
+        fos.close();
+
+        System.out.println("Merge Completed!");
     }
 }
