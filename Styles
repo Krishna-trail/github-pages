@@ -1,17 +1,27 @@
-.wrapper {
-    display: flex;
-    justify-content: center;   /* centers both boxes as a group */
-    align-items: center;
-    gap: 40px;                 /* space between left & right */
-    margin-top: 100px;
-}
+for (int row = 1; row <= sheet1.getLastRowNum(); row++) {
 
-.box {
-    width: 250px;
-    height: 150px;
-    background: #eaeaea;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    Row r = sheet1.getRow(row);
+    if (r == null) continue;
+
+    Cell adCell = r.getCell(adColIndex);
+    if (adCell == null) continue;
+
+    String adValue = getCellValue(adCell);
+
+    Cell sdnCell = r.getCell(sdnColIndex);
+    Cell idnCell = r.getCell(sdnColIndex + 1);
+
+    if (sdnCell == null) sdnCell = r.createCell(sdnColIndex);
+    if (idnCell == null) idnCell = r.createCell(sdnColIndex + 1);
+
+    if (e2DataMap.containsKey(adValue)) {
+
+        String[] e2Cols = e2DataMap.get(adValue);
+
+        idnCell.setCellValue(e2Cols[0]); // IDN
+        sdnCell.setCellValue(e2Cols[1]); // SDN
+
+    } else {
+        log.info("No match for AD: " + adValue);
+    }
 }
