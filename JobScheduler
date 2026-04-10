@@ -1,47 +1,24 @@
-body {
-    background-color: #f5f6f7;
-    font-family: Arial, sans-serif;
+HttpURLConnection conn = (HttpURLConnection) urlConnection;
+
+InputStream is;
+
+if (responseCode >= 200 && responseCode < 300) {
+    is = conn.getInputStream();   // success response
+} else {
+    is = conn.getErrorStream();   // error response
 }
 
-/* Main container */
-.timer-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 25px;
+BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
-    background: #f1f3f5;
-    padding: 30px 50px;
-    border-radius: 20px;
+StringBuilder response = new StringBuilder();
+String line;
 
-    width: fit-content;
-    margin: 50px auto;
+while ((line = br.readLine()) != null) {
+    response.append(line);
 }
+br.close();
 
-/* Time block */
-.time-block {
-    text-align: center;
-}
+// ✅ This is your JSON
+String jsonResponse = response.toString();
 
-/* Numbers (05, 00) */
-.time {
-    display: block;
-    font-size: 70px;
-    font-weight: 700;
-    color: #111;
-}
-
-/* Labels */
-.label {
-    font-size: 14px;
-    letter-spacing: 2px;
-    color: #666;
-}
-
-/* Colon */
-.colon {
-    font-size: 60px;
-    font-weight: bold;
-    color: #111;
-    margin-top: -10px;
-}
+System.out.println("JSON Response: " + jsonResponse);
