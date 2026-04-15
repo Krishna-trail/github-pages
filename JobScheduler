@@ -1,24 +1,19 @@
-HttpURLConnection conn = (HttpURLConnection) urlConnection;
+<div class="timer-container">
+  <div class="timer-box">
+    
+    <div class="time-row">
+      <div class="unit">
+        <span id="min">00</span>
+        <span class="label">MINUTES</span>
+      </div>
 
-InputStream is;
+      <span class="colon">:</span>
 
-if (responseCode >= 200 && responseCode < 300) {
-    is = conn.getInputStream();   // success response
-} else {
-    is = conn.getErrorStream();   // error response
-}
+      <div class="unit">
+        <span id="sec">00</span>
+        <span class="label">SECONDS</span>
+      </div>
+    </div>
 
-BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-StringBuilder response = new StringBuilder();
-String line;
-
-while ((line = br.readLine()) != null) {
-    response.append(line);
-}
-br.close();
-
-// ✅ This is your JSON
-String jsonResponse = response.toString();
-
-System.out.println("JSON Response: " + jsonResponse);
+  </div>
+</div>
