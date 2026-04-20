@@ -1,39 +1,117 @@
-.timer-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 50px;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: white;
 }
 
-.timer-box {
-  background: #f3f4f6;
-  padding: 25px 40px;
-  border-radius: 12px;
+/* Container */
+.qrcodeexpiredbody {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
-.time-row {
-  display: flex;
-  align-items: center;
-  gap: 15px;
+/* Card */
+.card {
+    background: #ffffff;
+    padding: 30px 20px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
 }
 
-.unit {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Header */
+.header {
+    font-size: 14px;
+    color: #1f2937;
+    text-align: left;
+    margin-bottom: 10px;
 }
 
-#min, #sec {
-  font-size: 40px;
-  font-weight: bold;
+/* Icon */
+.icon {
+    width: 50px;
+    height: 50px;
+    background-color: #33a6cf;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 15px;
 }
 
-.label {
-  font-size: 12px;
-  color: #666;
-  margin-top: 5px;
+/* Title */
+.title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: left;
+    margin-bottom: 10px;
 }
 
-.colon {
-  font-size: 40px;
-  font-weight: bold;
+/* Subtitle */
+.subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+/* Button */
+.btn {
+    background-color: #336cf2;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background-color: #2303bd;
+}
+
+/* Footer */
+.footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* Images container */
+.container-imgs {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Logos */
+.appstore-logo,
+.googleplay-logo {
+    height: auto;
+    max-width: 150px;
+    margin-top: 10px;
+}
+@media (max-width: 768px) {
+    .card {
+        padding: 20px;
+    }
+
+    .title {
+        font-size: 14px;
+    }
+
+    .subtitle {
+        font-size: 13px;
+    }
+
+    .btn {
+        width: 100%;
+    }
 }
